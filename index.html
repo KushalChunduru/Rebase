@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rebase — Dependency Control & API Registry</title>
+    <meta name="description" content="Observe API behaviour, catch breaking schema changes, and recover with confidence." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d4f938'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polygon points='2 17 12 22 22 17 12 12 2 17'/></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Italiana&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app" class="dashboard-layout">
+      <!-- SIDEBAR NAVIGATION -->
+      <aside class="sidebar sidebar-collapsed" id="sidebar">
+        <button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div class="sidebar-brand">
+          <div class="brand-logo-wrap">
+            <svg class="brand-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 2L26 8.5V20.5L14 27L2 20.5V8.5L14 2Z" fill="#d4f938" />
+              <path d="M14 6L22 10.5V19.5L14 24L6 19.5V10.5L14 6Z" fill="#0c0d11" />
+              <circle cx="14" cy="15" r="3.5" fill="#d4f938" />
+            </svg>
+            <span class="brand-name">rebase<span class="brand-dot">.</span></span>
+          </div>
+          <span class="brand-badge">CONTROL V2.4</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-title">REGISTRY & RADAR</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#overview" class="nav-link" data-view="overview" id="nav-overview">
+                <i data-lucide="layout-grid"></i>
+                <span>Overview</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#apis" class="nav-link active" data-view="apis" id="nav-apis">
+                <i data-lucide="cable"></i>
+                <span>APIs</span>
+                <span class="nav-counter">04</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#sdks" class="nav-link" data-view="sdks" id="nav-sdks">
+                <i data-lucide="layers"></i>
+                <span>SDKs</span>
+                <span class="nav-tag">v3.2</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#mcp" class="nav-link" data-view="mcp" id="nav-mcp">
+                <i data-lucide="cpu"></i>
+                <span>MCP Servers</span>
+                <span class="nav-dot-live"></span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="nav-section-title">OBSERVABILITY</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#settings" class="nav-link" data-view="settings" id="nav-settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Developer Team Profile -->
+        <div class="sidebar-profile" id="user-profile-toggle">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar tech-avatar-circle">
+              <i data-lucide="terminal"></i>
+            </div>
+            <span class="profile-status-dot"></span>
+          </div>
+          <div class="profile-info">
+            <div class="profile-name">Alex Vance</div>
+            <div class="profile-role">Core Protocol Team</div>
+          </div>
+          <button class="profile-chevron-btn" aria-label="Account Menu">
+            <i data-lucide="chevrons-up-down"></i>
+          </button>
+        </div>
+
+        <!-- Profile Popover Menu -->
+        <div class="profile-menu-dropdown hidden" id="profile-menu">
+          <div class="profile-menu-header">
+            <span class="org-label">ORGANIZATION</span>
+            <strong class="org-name">Rebase Protocol Labs</strong>
+          </div>
+          <ul class="profile-menu-list">
+            <li><a href="#account" id="link-account"><i data-lucide="user"></i> Team Profile</a></li>
+            <li><a href="#tokens" id="link-tokens"><i data-lucide="key"></i> API Access Tokens</a></li>
+            <li><a href="#docs" id="link-docs"><i data-lucide="book-open"></i> Dependency Handbook</a></li>
+            <li class="menu-divider"></li>
+            <li><a href="#logout" class="danger-link" id="link-logout"><i data-lucide="log-out"></i> Disconnect Session</a></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-viewport">
+        <!-- TOP BREADCRUMB & PAGE HEADER BAR -->
+        <header class="top-nav-bar">
+          <div class="breadcrumb-container">
+            <span class="breadcrumb-part">Rebase</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-part current">API Registry</span>
+          </div>
+
+          <div class="top-nav-actions">
+            <!-- Search Quick Trigger -->
+            <button class="top-quick-search-btn" id="btn-quick-search">
+              <i data-lucide="search"></i>
+              <span>Quick Filter</span>
+              <kbd>⌘K</kbd>
+            </button>
+
+            <!-- Notifications Icon with Indicator -->
+            <div class="notifications-wrapper">
+              <button class="top-icon-btn" id="btn-notifications" aria-label="Notifications (2 changes detected)">
+                <i data-lucide="bell"></i>
+                <span class="notification-indicator">2</span>
+              </button>
+
+              <!-- Notifications Dropdown Popover -->
+              <div class="notifications-popover hidden" id="notifications-popover">
+                <div class="notifications-head">
+                  <span class="head-title">Observed Telemetry Alerts</span>
+                  <span class="head-tag">2 Active Drifts</span>
+                </div>
+                <div class="notifications-body">
+                  <div class="notif-item unread" id="notif-customer-dir">
+                    <div class="notif-icon alert-orange">
+                      <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <div class="notif-content">
+                      <div class="notif-title">Customer Directory: v2 Breaking Schema</div>
+                      <div class="notif-desc">Field <code>user_tier</code> is now mandatory in payload. <code>billing_address</code> deprecated.</div>
+                      <div class="notif-meta">
+                        <span>3 mins ago</span>
+                        <button class="notif-action-link" id="notif-inspect-btn">Inspect Change →</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="notif-item" id="notif-order-srv">
+                    <div class="notif-icon alert-purple">
+                      <i data-lucide="info"></i>
+                    </div>
+                    <div class="notif-content">
+                      <div class="notif-title">Order Service: Pagination Transition</div>
+                      <div class="notif-desc">Observed cursor token query param drift on <code>/orders</code>.</div>
+                      <div class="notif-meta">
+                        <span>2 hours ago</span>
+                        <span class="notif-tag">Review required</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Avatar & Add API CTA -->
+            <div class="top-user-pill">
+              <div class="top-avatar tech-avatar-circle">
+                <i data-lucide="cpu"></i>
+              </div>
+              <span class="top-user-name">Alex V. (Lead)</span>
+            </div>
+
+            <button class="btn-primary-pill" id="btn-add-api-top">
+              <i data-lucide="plus"></i>
+              <span>Add API</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- HERO SECTION — Interactive dependency graph -->
+        <section class="hero-showcase-card">
+          <div class="hero-inner-white">
+            <!-- Decorative watermark -->
+            <span class="hero-bg-numeral">rb.</span>
+
+            <!-- Left: editorial content -->
+            <div class="hero-editorial">
+              <div class="hero-sticker-badge">
+                <span class="sticker-dot"></span>
+                <span>LIVE DEPENDENCY GRAPH</span>
+                <span class="sticker-arrow">→ 2026</span>
+              </div>
+
+              <h1 class="hero-display-heading">
+                RE<wbr/>BASE
+              </h1>
+              <p class="hero-tagline">Dependency Control Platform</p>
+
+              <p class="hero-supporting-text">
+                Your APIs break silently. Schemas drift. Contracts fail at 3 AM.<br/>
+                <strong>Rebase watches so you don't have to.</strong>
+              </p>
+
+              <div class="hero-cta-row">
+                <button class="btn-hero-primary" id="btn-hero-browse">
+                  <span>Explore Registry</span>
+                  <i data-lucide="arrow-up-right"></i>
+                </button>
+                <button class="btn-hero-secondary" id="btn-hero-add">
+                  <i data-lucide="plus"></i>
+                  <span>Add API</span>
+                </button>
+              </div>
+
+              <!-- Live stats strip inside hero -->
+              <div class="hero-live-strip">
+                <div class="hero-stat-chip">
+                  <span class="stat-chip-dot green"></span>
+                  <span class="stat-chip-val">99.98%</span>
+                  <span class="stat-chip-label">uptime</span>
+                </div>
+                <div class="hero-stat-chip">
+                  <span class="stat-chip-dot lime"></span>
+                  <span class="stat-chip-val">42ms</span>
+                  <span class="stat-chip-label">avg latency</span>
+                </div>
+                <div class="hero-stat-chip alert">
+                  <span class="stat-chip-dot orange"></span>
+                  <span class="stat-chip-val">2</span>
+                  <span class="stat-chip-label">drifts</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: interactive dependency graph -->
+            <div class="hero-graph-container" id="hero-dep-graph">
+              <svg viewBox="0 0 420 360" class="dep-graph-svg" id="dep-graph-svg">
+                <defs>
+                  <filter id="glow-green">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="glow-orange">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <linearGradient id="line-ok" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#22c55e" stop-opacity="0.15"/>
+                    <stop offset="50%" stop-color="#22c55e" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#22c55e" stop-opacity="0.15"/>
+                  </linearGradient>
+                  <linearGradient id="line-warn" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#fa4d1e" stop-opacity="0.15"/>
+                    <stop offset="50%" stop-color="#fa4d1e" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#fa4d1e" stop-opacity="0.15"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Connection lines (animated) -->
+                <path class="dep-line ok" d="M 210 90 C 160 130, 90 130, 70 180" />
+                <path class="dep-line warn" d="M 210 90 C 250 140, 310 140, 340 180" />
+                <path class="dep-line ok" d="M 210 90 C 210 140, 200 160, 180 220" />
+                <path class="dep-line ok" d="M 70 180 C 80 220, 100 250, 120 280" />
+                <path class="dep-line warn" d="M 340 180 C 330 220, 310 250, 300 280" />
+
+                <!-- Animated data packets traveling along lines -->
+                <circle class="data-packet green" r="3">
+                  <animateMotion dur="2.5s" repeatCount="indefinite" path="M 210 90 C 160 130, 90 130, 70 180"/>
+                </circle>
+                <circle class="data-packet orange" r="3">
+                  <animateMotion dur="3s" repeatCount="indefinite" path="M 210 90 C 250 140, 310 140, 340 180"/>
+                </circle>
+                <circle class="data-packet green" r="3">
+                  <animateMotion dur="2.8s" repeatCount="indefinite" path="M 210 90 C 210 140, 200 160, 180 220"/>
+                </circle>
+
+                <!-- Central hub node: YOUR APP -->
+                <g class="graph-node node-hub" data-tooltip="Your Application">
+                  <circle cx="210" cy="90" r="28" class="node-ring hub"/>
+                  <circle cx="210" cy="90" r="18" class="node-core hub"/>
+                  <text x="210" y="94" class="node-label hub-label">APP</text>
+                </g>
+
+                <!-- API node: Stripe -->
+                <g class="graph-node node-api" data-tooltip="Stripe Payments — Healthy" data-status="ok">
+                  <circle cx="70" cy="180" r="22" class="node-ring"/>
+                  <circle cx="70" cy="180" r="14" class="node-core ok"/>
+                  <text x="70" y="184" class="node-label">S</text>
+                  <text x="70" y="210" class="node-sublabel">Stripe</text>
+                </g>
+
+                <!-- API node: Customer Dir (drifting) -->
+                <g class="graph-node node-api" data-tooltip="Customer Dir — Schema Drift ⚠" data-status="warn">
+                  <circle cx="340" cy="180" r="22" class="node-ring warn"/>
+                  <circle cx="340" cy="180" r="14" class="node-core warn"/>
+                  <text x="340" y="184" class="node-label">CD</text>
+                  <text x="340" y="210" class="node-sublabel warn-text">Cust. Dir</text>
+                </g>
+
+                <!-- API node: Product Catalog -->
+                <g class="graph-node node-api" data-tooltip="Product Catalog — Healthy" data-status="ok">
+                  <circle cx="180" cy="230" r="20" class="node-ring"/>
+                  <circle cx="180" cy="230" r="13" class="node-core ok"/>
+                  <text x="180" y="234" class="node-label">PC</text>
+                  <text x="180" y="258" class="node-sublabel">Products</text>
+                </g>
+
+                <!-- Downstream: Checkout -->
+                <g class="graph-node node-downstream" data-tooltip="Checkout Flow — Protected" data-status="ok">
+                  <circle cx="120" cy="290" r="16" class="node-ring small"/>
+                  <circle cx="120" cy="290" r="10" class="node-core ok small"/>
+                  <text x="120" y="294" class="node-label small-label">CO</text>
+                  <text x="120" y="314" class="node-sublabel">Checkout</text>
+                </g>
+
+                <!-- Downstream: Billing (affected by drift) -->
+                <g class="graph-node node-downstream" data-tooltip="Billing — At Risk ⚠" data-status="warn">
+                  <circle cx="300" cy="290" r="16" class="node-ring small warn"/>
+                  <circle cx="300" cy="290" r="10" class="node-core warn small"/>
+                  <text x="300" y="294" class="node-label small-label">BL</text>
+                  <text x="300" y="314" class="node-sublabel warn-text">Billing</text>
+                </g>
+
+                <!-- Pulse rings on hub -->
+                <circle cx="210" cy="90" r="28" class="pulse-ring pulse-1"/>
+                <circle cx="210" cy="90" r="28" class="pulse-ring pulse-2"/>
+              </svg>
+
+              <!-- Floating tooltip (positioned by JS) -->
+              <div class="graph-tooltip" id="graph-tooltip"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE DATA TICKER -->
+        <div class="live-ticker-strip">
+          <div class="ticker-track">
+            <span class="ticker-item"><span class="ticker-dot green"></span> STRIPE API — 200 OK — 42ms</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot orange"></span> CUSTOMER DIR — SCHEMA DRIFT</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot green"></span> PRODUCT CATALOG — VALID</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot purple"></span> ORDER SERVICE — REVIEW</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot green"></span> STRIPE API — 200 OK — 42ms</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot orange"></span> CUSTOMER DIR — SCHEMA DRIFT</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot green"></span> PRODUCT CATALOG — VALID</span>
+            <span class="ticker-sep">&#x2022;</span>
+            <span class="ticker-item"><span class="ticker-dot purple"></span> ORDER SERVICE — REVIEW</span>
+            <span class="ticker-sep">&#x2022;</span>
+          </div>
+        </div>
+
+        <!-- SUMMARY METRICS ROW (Inspired by Reference Image's 01 Numeral & Curved Shape Cards) -->
+        <section class="metrics-grid">
+          <!-- Metric Card 1: Registered APIs -->
+          <div class="metric-card metric-card-white">
+            <div class="metric-top-bar">
+              <span class="pill-outline-badge">REGISTRY CORE</span>
+              <div class="metric-icon-wrap">
+                <i data-lucide="database"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-giant-number"><span class="slashed-zero">0</span>4</div>
+              <div class="metric-info">
+                <h3 class="metric-title">Registered APIs</h3>
+                <p class="metric-desc">Continuous telemetry actively watching production dependencies.</p>
+              </div>
+            </div>
+            <div class="metric-footer-team">
+              <div class="tech-node-stack">
+                <div class="tech-node-icon" title="Cluster Alpha"><i data-lucide="cpu"></i></div>
+                <div class="tech-node-icon" title="Cluster Beta"><i data-lucide="network"></i></div>
+                <div class="tech-node-icon" title="Cluster Gamma"><i data-lucide="git-commit"></i></div>
+              </div>
+              <span class="team-caption">3 CLUSTERS ACTIVE</span>
+            </div>
+          </div>
+
+          <!-- Metric Card 2: Changes detected -->
+          <div class="metric-card metric-card-coral">
+            <div class="metric-top-bar">
+              <span class="pill-white-badge">CRITICAL DRIFT</span>
+              <div class="metric-icon-wrap alert-spin">
+                <i data-lucide="zap"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-giant-number"><span class="slashed-zero">0</span>2</div>
+              <div class="metric-info">
+                <h3 class="metric-title">Changes detected</h3>
+                <p class="metric-desc">1 breaking schema alteration & 1 query contract drift identified.</p>
+              </div>
+            </div>
+            <div class="metric-footer-action">
+              <button class="btn-inspect-coral" id="btn-inspect-summary">
+                <span>Inspect Change</span>
+                <i data-lucide="arrow-up-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Metric Card 3: Workflows protected -->
+          <div class="metric-card metric-card-lime">
+            <div class="metric-top-bar">
+              <span class="pill-dark-badge">FAIL-SAFE ACTIVE</span>
+              <div class="metric-icon-wrap">
+                <i data-lucide="shield-check"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <div class="metric-giant-number"><span class="slashed-zero">0</span>8</div>
+              <div class="metric-info">
+                <h3 class="metric-title">Workflows protected</h3>
+                <p class="metric-desc">Downstream checkout, user billing, and auth routines shielded.</p>
+              </div>
+            </div>
+            <div class="metric-footer-status">
+              <div class="shield-pulse-wrap">
+                <span class="shield-dot-pulse"></span>
+                <span>0 Incident Breaches</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HOMAGE SUB-ROW: GOLDEN GUARDIAN & CONNECTOR RIBBON (Like the bottom-left lime & portrait element in the reference) -->
+        <section class="sub-showcase-row">
+          <!-- Silicon AST Shield Card -->
+          <div class="guardian-card">
+            <div class="guardian-image-wrap">
+              <div class="guardian-generated-visual">
+                <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" class="guardian-svg">
+                  <defs>
+                    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#d4f938" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="#7952f5" stop-opacity="0.1"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="280" height="180" fill="url(#shieldGrad)"/>
+                  <g stroke="#d4f938" stroke-width="0.6" fill="none" opacity="0.3">
+                    <rect x="20" y="20" width="40" height="40" rx="4"/>
+                    <rect x="80" y="30" width="30" height="30" rx="4"/>
+                    <rect x="130" y="20" width="50" height="40" rx="4"/>
+                    <rect x="200" y="25" width="35" height="35" rx="4"/>
+                    <rect x="30" y="80" width="45" height="35" rx="4"/>
+                    <rect x="100" y="85" width="60" height="30" rx="4"/>
+                    <rect x="180" y="80" width="40" height="40" rx="4"/>
+                    <rect x="50" y="130" width="50" height="30" rx="4"/>
+                    <rect x="120" y="135" width="40" height="25" rx="4"/>
+                    <rect x="190" y="130" width="55" height="30" rx="4"/>
+                  </g>
+                  <g fill="#d4f938" opacity="0.5">
+                    <circle cx="40" cy="40" r="2"/><circle cx="95" cy="45" r="2"/>
+                    <circle cx="155" cy="40" r="2.5"><animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/></circle>
+                    <circle cx="217" cy="42" r="2"/><circle cx="52" cy="97" r="2"/>
+                    <circle cx="130" cy="100" r="2.5"/><circle cx="200" cy="100" r="2"/>
+                  </g>
+                  <path d="M40 40 L95 45 L155 40 L217 42" stroke="#22d3ee" stroke-width="0.8" fill="none" opacity="0.4" stroke-dasharray="4 3">
+                    <animate attributeName="stroke-dashoffset" values="0;-14" dur="3s" repeatCount="indefinite"/>
+                  </path>
+                  <path d="M52 97 L130 100 L200 100" stroke="#d4f938" stroke-width="0.8" fill="none" opacity="0.3" stroke-dasharray="4 3">
+                    <animate attributeName="stroke-dashoffset" values="0;-14" dur="4s" repeatCount="indefinite"/>
+                  </path>
+                </svg>
+              </div>
+              <div class="guardian-badge-pill">
+                <i data-lucide="shield"></i>
+                <span>DEPENDENCY TELEMETRY</span>
+              </div>
+            </div>
+            <div class="guardian-content">
+              <h4>Automated Contract Shields</h4>
+              <p>Every external endpoint mirrored against production AST runtime validators.</p>
+            </div>
+          </div>
+
+          <!-- Connecting Neck / Stem Element (Homage to reference connecting fillet) -->
+          <div class="connector-stem-card">
+            <div class="stem-header">
+              <div class="stem-badge">
+                <i data-lucide="activity"></i>
+                <span>LIVE TELEMETRY STREAM</span>
+              </div>
+              <div class="stem-time">24.10.2026 // LIVE</div>
+            </div>
+            <div class="stem-capsules-wrap">
+              <div class="stem-capsule-item">
+                <span class="capsule-indicator-dot"></span>
+                <span class="capsule-text">Stripe API response contracts validated across 14 payment workers</span>
+                <span class="capsule-pill-code">200 OK</span>
+                <div class="capsule-triad-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="#d4f938">
+                    <circle cx="6" cy="12" r="3"/>
+                    <circle cx="18" cy="12" r="3"/>
+                    <circle cx="12" cy="6" r="3"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="stem-capsule-item alert-border">
+                <span class="capsule-indicator-dot orange-dot"></span>
+                <span class="capsule-text">Customer Directory <code>v2</code> breaking field: <code>user_tier</code> required</span>
+                <span class="capsule-pill-code orange">BREAKING</span>
+                <button class="capsule-pill-btn" id="btn-stem-details">
+                  DETAILS
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SEARCH & DISCOVERY BAR -->
+        <section class="search-discovery-section">
+          <div class="search-input-group">
+            <i data-lucide="search" class="search-input-icon"></i>
+            <input
+              type="text"
+              id="api-search-input"
+              class="search-input"
+              placeholder="Search API services or enter a base URL..."
+              autocomplete="off"
+            />
+            <button class="search-clear-btn hidden" id="search-clear-btn" aria-label="Clear search">
+              <i data-lucide="x"></i>
+            </button>
+            <div class="search-filter-counter" id="search-filter-count">Showing 4 of 4</div>
+          </div>
+
+          <div class="search-actions-group">
+            <!-- Filter Filter Chips -->
+            <div class="filter-chips">
+              <button class="filter-chip active" data-filter="all">All</button>
+              <button class="filter-chip" data-filter="Change detected">Changes (1)</button>
+              <button class="filter-chip" data-filter="Monitoring">Monitoring (2)</button>
+              <button class="filter-chip" data-filter="Review required">Review (1)</button>
+            </div>
+
+            <!-- Browse Services Button -->
+            <button class="btn-browse-services" id="btn-browse-services">
+              <i data-lucide="compass"></i>
+              <span>Browse Services</span>
+            </button>
+
+            <!-- Add API Button -->
+            <button class="btn-add-api-action" id="btn-add-api">
+              <i data-lucide="plus-circle"></i>
+              <span>Add API</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- API DEPENDENCIES TABLE -->
+        <section class="table-container">
+          <div class="table-glass-card">
+            <table class="api-table" id="api-table">
+              <thead>
+                <tr>
+                  <th class="col-service">Service</th>
+                  <th class="col-endpoint">Base URL / Endpoints</th>
+                  <th class="col-behaviour">Behaviour</th>
+                  <th class="col-status">Status</th>
+                  <th class="col-action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="api-table-body">
+                <!-- Rows injected dynamically via JS with exact data from prompt -->
+              </tbody>
+            </table>
+
+            <!-- Empty Search State -->
+            <div class="empty-state hidden" id="empty-state">
+              <div class="empty-state-icon">
+                <i data-lucide="search-x"></i>
+              </div>
+              <h3>No matching API dependencies found</h3>
+              <p>Try searching for a different service name, URL, or endpoint.</p>
+              <button class="btn-reset-search" id="btn-reset-search">Reset search filters</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- MODAL 1: INSPECT CHANGE / BREAKING SCHEMA DIFF MODAL -->
+    <div class="modal-backdrop hidden" id="modal-inspect-change">
+      <div class="modal-dialog modal-dialog-large">
+        <div class="modal-header">
+          <div class="modal-header-badge alert-badge">
+            <i data-lucide="alert-triangle"></i>
+            <span>SCHEMA DRIFT INVESTIGATION</span>
+          </div>
+          <button class="modal-close-btn" id="modal-close-inspect" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="inspect-service-header">
+            <div class="service-chip-wrap">
+              <div class="service-icon-box bg-purple">
+                <i data-lucide="users"></i>
+              </div>
+              <div>
+                <h2 class="inspect-title">Customer Directory API</h2>
+                <div class="inspect-sub">
+                  <code>https://api.afterform.dev/users</code> &bull; <code>GET /users</code>
+                </div>
+              </div>
+            </div>
+            <div class="inspect-severity-tag">
+              <span class="pulse-orange-dot"></span>
+              <span>SEVERITY: BREAKING CONTRACT</span>
+            </div>
+          </div>
+
+          <!-- Difference comparison columns -->
+          <div class="diff-container">
+            <div class="diff-header-row">
+              <div class="diff-col-head">
+                <span class="diff-ver">OBSERVED BASELINE (v1.8.4)</span>
+                <span class="diff-status-tag tag-green">Passing Contracts</span>
+              </div>
+              <div class="diff-col-head">
+                <span class="diff-ver">LIVE CONTRACT DRIFT (v2.0.0-rc1)</span>
+                <span class="diff-status-tag tag-orange">Breaking Changes Detected</span>
+              </div>
+            </div>
+
+            <div class="diff-code-wrapper">
+              <div class="diff-pane baseline-pane">
+                <pre><code>{
+  "id": "usr_99812",
+  "name": "Sarah Connor",
+  "email": "sarah@cyberdyne.io",
+  <span class="diff-line-removed">- "billing_address": {
+-   "street": "104 Sky Net Blvd",
+-   "country": "US"
+- },</span>
+  "status": "active",
+  "created_at": 1726789000
+}</code></pre>
+              </div>
+              <div class="diff-pane live-pane">
+                <pre><code>{
+  "id": "usr_99812",
+  "name": "Sarah Connor",
+  "email": "sarah@cyberdyne.io",
+  <span class="diff-line-added">+ "tax_identifier": {
++   "tin": "US-991204-B",
++   "verified": true
++ }, // MANDATORY FIELD</span>
+  <span class="diff-line-added">+ "user_tier": "enterprise", // NEW ENUM</span>
+  "status": "active",
+  "created_at": 1726789000
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Impacted Workflows Breakdown -->
+          <div class="impact-section">
+            <h4 class="impact-title">
+              <i data-lucide="git-fork"></i>
+              Potentially Affected Workflows (2 downstream pipelines)
+            </h4>
+            <div class="impact-list">
+              <div class="impact-card">
+                <div class="impact-card-head">
+                  <span class="impact-name">Checkout & Onboarding Pipeline</span>
+                  <span class="impact-badge-high">High Risk</span>
+                </div>
+                <p>Parser expects <code>billing_address</code> field. Will throw <code>TypeError: undefined</code> during customer initialization.</p>
+              </div>
+              <div class="impact-card">
+                <div class="impact-card-head">
+                  <span class="impact-name">User Profile Sync Daemon</span>
+                  <span class="impact-badge-med">Medium Risk</span>
+                </div>
+                <p>Missing <code>user_tier</code> mapping will result in default downgrade fallback.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-dismiss-inspect">Dismiss</button>
+          <button class="btn-primary-pill" id="btn-remediate-inspect">
+            <i data-lucide="check-circle-2"></i>
+            <span>Update TypeScript Contract & Regenerate SDK</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: BROWSE SERVICES DISCOVERY CATALOG -->
+    <div class="modal-backdrop hidden" id="modal-browse-services">
+      <div class="modal-dialog modal-dialog-large">
+        <div class="modal-header">
+          <div class="modal-header-badge">
+            <i data-lucide="compass"></i>
+            <span>SERVICE DISCOVERY DIRECTORY</span>
+          </div>
+          <button class="modal-close-btn" id="modal-close-browse" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="catalog-intro">
+            <h3>Discover & Register Available Services</h3>
+            <p>Connect verified third-party API dependencies or internal microservices into afterform radar with a single click.</p>
+          </div>
+
+          <div class="catalog-grid" id="catalog-services-grid">
+            <!-- Injected dynamically via JS (OpenAI, Twilio, GitHub, Supabase, Anthropic, Shopify) -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-close-browse-footer">Close Catalog</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: ADD API DEPENDENCY MODAL -->
+    <div class="modal-backdrop hidden" id="modal-add-api">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-header-badge">
+            <i data-lucide="plus-circle"></i>
+            <span>REGISTER NEW API DEPENDENCY</span>
+          </div>
+          <button class="modal-close-btn" id="modal-close-add" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="form-add-api" class="modal-form">
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add-service-name">Service Name *</label>
+                <input type="text" id="add-service-name" required placeholder="e.g. OpenAI Responses API" />
+              </div>
+              <div class="form-group">
+                <label for="add-service-desc">Description</label>
+                <input type="text" id="add-service-desc" required placeholder="e.g. AI inference & completions" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="add-base-url">Base URL *</label>
+                <input type="url" id="add-base-url" required placeholder="https://api.openai.com/v1" />
+              </div>
+              <div class="form-group flex-1">
+                <label for="add-endpoint">Primary Endpoint *</label>
+                <input type="text" id="add-endpoint" required placeholder="POST /chat/completions" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add-auth-type">Authentication Method</label>
+                <select id="add-auth-type">
+                  <option value="Bearer authentication">Bearer authentication</option>
+                  <option value="API key authentication">API key authentication</option>
+                  <option value="no authentication">No authentication</option>
+                  <option value="OAuth2 mTLS">OAuth2 mTLS</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="add-version">Protocol Version</label>
+                <input type="text" id="add-version" value="v1" placeholder="v1" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add-rate-limit">Rate Limit or Pagination</label>
+                <input type="text" id="add-rate-limit" placeholder="e.g. 500 requests per minute or Cursor-based" />
+              </div>
+              <div class="form-group">
+                <label for="add-status">Initial Status</label>
+                <select id="add-status">
+                  <option value="Monitoring">Monitoring (Live radar)</option>
+                  <option value="Review required">Review required</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-add">Cancel</button>
+            <button type="submit" class="btn-primary-pill">
+              <i data-lucide="check"></i>
+              <span>Register Dependency</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- DRAWER: API ROW DETAILS DRILLDOWN -->
+    <div class="drawer-backdrop hidden" id="drawer-api-details">
+      <div class="drawer-panel">
+        <div class="drawer-header">
+          <div class="drawer-title-group">
+            <span class="drawer-category">DEPENDENCY TELEMETRY</span>
+            <h3 id="drawer-service-name">Service Details</h3>
+          </div>
+          <button class="drawer-close-btn" id="drawer-close-btn" aria-label="Close drawer">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="drawer-content" id="drawer-body-content">
+          <!-- Populated dynamically on row click -->
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-test-ping" id="btn-drawer-ping">
+            <i data-lucide="play"></i>
+            <span>Simulate Probe Ping</span>
+          </button>
+          <button class="btn-secondary" id="btn-drawer-close-action">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
