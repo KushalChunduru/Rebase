@@ -1,123 +1,215 @@
-# AdaptX — Autonomous Dependency Resilience Engine
+# Rebase — Autonomous Dependency Resilience Engine
 
 > **The Internet After the API.**  
 > Detect dependency drift. Understand its impact. Generate safe compatibility fixes. Verify recovery.
 
-AdaptX is a DevOps-focused dependency resilience platform designed to help engineering teams handle unexpected changes in external APIs, SDKs, MCP tools, and webhooks without manually diagnosing every downstream failure.
+Rebase is a DevOps-focused dependency resilience platform designed to help engineering teams handle unexpected changes in external APIs, SDKs, MCP tools, and webhooks without manually diagnosing every downstream failure.
 
-Instead of stopping at an alert, AdaptX aims to connect dependency change detection with impact analysis, AI-assisted remediation, automated validation, and safe recovery.
+Instead of stopping at an alert, Rebase aims to connect dependency change detection with impact analysis, AI-assisted remediation, automated validation, and safe recovery.
+
+---
+
+## Table of Contents
+
+- [The Problem](#the-problem)
+- [Our Solution](#our-solution)
+- [Core Workflow](#core-workflow)
+- [Supported Dependency Categories](#supported-dependency-categories)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Technology Stack](#technology-stack)
+- [Current Prototype](#current-prototype)
+- [Example Scenario](#example-scenario)
+- [Safety and Reliability](#safety-and-reliability)
+- [Existing Tools and Differentiation](#existing-tools-and-differentiation)
+- [Target Users](#target-users)
+- [Roadmap](#roadmap)
+- [Project Vision](#project-vision)
+
+---
 
 ## The Problem
 
-Modern applications depend on external services, third-party APIs, SDKs, webhooks, and AI tool integrations. These dependencies can change independently of the applications that consume them.
+Modern applications depend on external APIs, third-party SDKs, webhooks, microservices, and AI tool integrations. These dependencies evolve independently of the applications that consume them.
 
-A change that appears small can cause:
+Even a seemingly minor dependency change can cause:
+
 - API response parsing failures.
 - Broken service-to-service communication.
 - Unexpected application behavior despite valid schemas.
 - Failed workflows and cascading service disruptions.
-- Time-consuming manual debugging and emergency patches.
+- Increased debugging time and emergency code changes.
+- Production incidents caused by changes outside the team's control.
 
-Traditional monitoring may reveal that something failed, while contract testing can identify incompatibilities. Engineering teams may still need to determine the downstream impact, implement a fix, and verify that the affected workflow has recovered.
+Traditional monitoring can identify failures, while contract-testing tools can detect certain incompatibilities. However, engineering teams may still need to trace downstream impact, develop a compatibility fix, test it, and verify that the affected application behavior has recovered.
 
-**AdaptX aims to close this gap by turning dependency changes into an actionable, validated remediation workflow.**
+**The challenge is not merely detecting that a dependency changed. It is understanding what the change breaks and restoring compatibility safely.**
 
 ## Our Solution
 
-AdaptX is designed around a unified dependency-resilience pipeline:
+Rebase is being developed as an autonomous dependency resilience engine for DevOps and platform engineering teams.
+
+It aims to connect dependency observation, change detection, impact analysis, remediation, validation, and recovery verification into a unified workflow.
+
+Rather than simply reporting an incompatibility, Rebase is designed to help answer five questions:
+
+1. **What changed?** Identify unexpected changes in dependency contracts or behavior.
+2. **What is affected?** Trace the impact across dependent services and application workflows.
+3. **How can it be fixed?** Generate a compatibility adapter, patch, or actionable remediation recommendation.
+4. **Is the fix safe?** Validate the proposed change through relevant tests and safety policies.
+5. **Has the application recovered?** Verify that the affected workflow behaves as expected.
+
+The long-term goal is to reduce manual dependency-related firefighting while preserving engineering control over risky changes.
+
+## Core Workflow
+
+Rebase follows a dependency-resilience pipeline:
 
 1. **Observe** — Collect dependency contracts, schemas, versions, events, tool definitions, and runtime observations.
-2. **Detect** — Compare current observations against a known baseline to identify dependency drift.
-3. **Analyze Impact** — Trace affected services, functions, and application workflows through a dependency graph.
-4. **Reason** — Explain the change and assess its likely impact using deterministic rules and AI-assisted semantic analysis where appropriate.
-5. **Propose a Fix** — Generate a compatibility adapter, patch, or remediation recommendation.
-6. **Validate** — Run contract checks, regression tests, and relevant safety checks.
-7. **Apply Safely** — Allow eligible low-risk fixes to proceed under configured policies; require human approval for risky or uncertain changes.
-8. **Verify Recovery** — Confirm that the affected workflow behaves correctly after remediation.
+2. **Normalize** — Convert observations from different dependency types into a common representation.
+3. **Detect Drift** — Compare current observations against a known baseline.
+4. **Analyze Impact** — Use a dependency graph to identify potentially affected services, functions, and workflows.
+5. **Reason** — Explain the change and assess its likely impact using deterministic rules and AI-assisted semantic analysis where appropriate.
+6. **Propose Remediation** — Generate a compatibility adapter, patch, or migration recommendation.
+7. **Validate** — Execute contract checks, regression tests, and relevant safety checks.
+8. **Apply Safely** — Allow eligible low-risk fixes to proceed under configured policies; route risky or uncertain cases for human review.
+9. **Verify Recovery** — Confirm that the affected application behavior has recovered.
 
-The objective is to move from *detecting failures* to *understanding, repairing, and verifying dependency compatibility*.
+The intended outcome is a transition from reactive debugging to a more automated, evidence-driven dependency recovery process.
 
 ## Supported Dependency Categories
 
-| Dependency type | Example of a change | Intended response |
+| Dependency type | Example change | Intended Rebase response |
 |---|---|---|
-| External API | Response field or data type changes | Detect contract drift and propose a compatibility adapter |
-| SDK | Method signature or return behavior changes | Identify affected callers and suggest a migration |
-| MCP tool | Parameter schema or tool semantics change | Detect incompatibility and assess whether the action remains safe |
-| Webhook | Event name or payload structure changes | Identify affected event handlers and propose compatibility handling |
+| External API | Response field renamed or data type changed | Detect contract drift and propose a compatibility adapter |
+| SDK | Method signature or return behavior changed | Identify affected callers and suggest a migration |
+| MCP tool | Parameter schema or tool semantics changed | Detect incompatibility and assess semantic risk |
+| Webhook | Event name or payload structure changed | Identify affected handlers and propose compatibility handling |
 
-The current prototype and future roadmap may support these categories at different levels. Each integration must be implemented and validated before being considered production-ready.
+Support for these categories may differ by implementation stage. Each integration must be implemented and tested before it can be considered operational.
 
-## Key Capabilities
+## Key Features
 
-### Dependency Change Detection
-Compare observed dependency behavior or contracts against a baseline to identify unexpected changes.
+### 1. Dependency Drift Detection
 
-### Dependency Impact Graph
-Represent relationships between dependencies, services, and downstream workflows to help engineers understand the potential blast radius of a change.
+Identify unexpected changes by comparing current dependency observations with a known baseline.
 
-### AI-Assisted Remediation
-Explain detected changes and propose compatibility adapters or patches. AI-generated changes should be treated as proposals until validated.
+Potential signals include:
 
-### Automated Validation
-Use contract checks and regression tests to evaluate whether a proposed fix preserves expected application behavior.
+- Request and response schemas.
+- Field names and data types.
+- SDK versions and method signatures.
+- Webhook event names and payloads.
+- MCP tool definitions, parameters, and descriptions.
+- Relevant runtime errors and behavior changes.
 
-### Safety-Gated Recovery
-Use explicit policies, validation results, and risk assessment to determine whether a fix can proceed automatically or requires human approval.
+### 2. Dependency Impact Analysis
 
-### Engineering Dashboard
-Provide engineers with visibility into detected changes, affected dependencies, remediation actions, validation results, and recovery status.
+Represent relationships between dependencies, services, and downstream workflows in a dependency graph.
 
-## Architecture
+The goal is to help engineers identify the potential blast radius of a change rather than investigate every component manually.
+
+### 3. AI-Assisted Remediation
+
+Analyze detected changes and propose compatibility adapters, code patches, or migration recommendations.
+
+Generated changes should remain proposals until they pass the required validation and safety checks.
+
+### 4. Automated Validation
+
+Evaluate proposed fixes using relevant contract checks, regression tests, and application-level workflow validation.
+
+A successful patch operation alone is not proof of recovery. The affected behavior must also be tested.
+
+### 5. Safety-Gated Recovery
+
+Use explicit policies, validation results, and risk assessment to decide whether a fix can proceed automatically or requires human approval.
+
+High-risk or semantically ambiguous changes should not be automatically applied simply because their schemas remain valid.
+
+### 6. Engineering Dashboard
+
+Provide a centralized view of detected changes, affected dependencies, remediation proposals, validation results, and recovery status.
+
+The intended experience is an engineering workspace that helps DevOps and platform engineering teams investigate and resolve dependency-related incidents.
+
+## System Architecture
 
 ```mermaid
 flowchart TD
     A[External Dependencies] --> B[Observation and Normalization]
-    B --> C[Baseline Comparison and Drift Detection]
-    C --> D[Dependency Impact Graph]
-    D --> E[Semantic Analysis and Risk Assessment]
-    E --> F[Compatibility Fix Proposal]
-    F --> G[Sandbox and Regression Validation]
-    G --> H{Safety Gate}
-    H -->|Low risk and validated| I[Apply Approved Fix]
-    H -->|Risky or uncertain| J[Human Review]
-    J -->|Approved| I
-    I --> K[Verify Recovery]
-    K --> L[Update Status and Evidence]
+    B --> C[Baseline Comparison]
+    C --> D[Drift Detection]
+    D --> E[Dependency Impact Graph]
+    E --> F[Semantic Analysis and Risk Assessment]
+    F --> G[Compatibility Fix Proposal]
+    G --> H[Sandbox and Regression Validation]
+    H --> I{Safety Gate}
+    I -->|Validated and low risk| J[Apply Fix]
+    I -->|Risky or uncertain| K[Human Review]
+    K -->|Approved| J
+    J --> L[Verify Recovery]
+    L --> M[Record Results and Evidence]
 ```
 
-This diagram describes the intended architecture. Individual components may be implemented incrementally.
+The diagram describes the intended end-to-end architecture. Individual components may be implemented incrementally.
+
+### Architectural Principles
+
+- **Dependency agnostic:** Use a common observation model across different dependency categories.
+- **Evidence driven:** Base remediation decisions on detected changes and validation results.
+- **Safe by default:** Require stronger review for higher-risk modifications.
+- **Incremental adoption:** Begin with simulated dependencies and expand toward real integrations.
+- **Verifiable recovery:** Measure success by restored behavior, not merely by generated patches.
 
 ## Technology Stack
 
 The current prototype uses or is structured around the following technologies:
 
-- **Frontend:** React, Vite, TypeScript
-- **Backend:** Node.js, Express, TypeScript
-- **Database:** MongoDB
-- **Development environment:** Antigravity IDE
-- **Testing and validation:** Contract checks, scenario-based testing, and regression validation
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, TypeScript |
+| Backend | Node.js, Express, TypeScript |
+| Database | MongoDB |
+| Development environment | Antigravity IDE |
+| Validation | Scenario-based checks, contract validation, and regression testing |
 
-Additional technologies for AI-assisted analysis, CI/CD integration, observability, and sandboxed remediation can be selected as the corresponding features are implemented.
+Additional components for AI-assisted analysis, CI/CD integration, observability, and sandboxed remediation can be introduced as their corresponding capabilities are implemented.
 
 ## Current Prototype
 
-The current demonstration includes an API dependency-change scenario based on the NextGen Gear example application.
+The current demonstration includes an API dependency-change scenario using the NextGen Gear example application.
 
-The prototype demonstrates the following workflow:
+The demonstrated workflow is:
 
 1. Introduce a simulated API response type change.
-2. Detect the dependency drift through the AdaptX/Rebase dashboard.
-3. Highlight the affected dependency and downstream behavior.
+2. Detect the dependency drift through the Rebase dashboard.
+3. Identify the affected dependency and downstream behavior.
 4. Apply a compatibility adapter.
-5. Run contract validation.
-6. Verify that the storefront's affected behavior recovers.
+5. Validate the updated contract.
+6. Refresh the application and verify that the affected behavior recovers.
 
-This scenario provides a concrete starting point for demonstrating dependency resilience. The longer-term product direction is an engineering-focused workspace for DevOps and platform engineering teams, rather than an e-commerce application.
+This provides a concrete starting point for demonstrating the dependency-resilience workflow.
 
-**Important:** The SDK, MCP, webhook, broad AI remediation, and production CI/CD capabilities are part of the intended scope unless independently implemented and tested in the current codebase.
+### Product Direction
 
-## Example Scenario: API Response Drift
+The longer-term product direction is an engineering-focused platform for DevOps and platform engineering teams.
+
+The proposed experience centers on:
+
+- Dependency health and drift visibility.
+- Service and workflow impact analysis.
+- Compatibility remediation.
+- Regression validation.
+- Safety-gated recovery.
+
+The existing e-commerce scenario serves as a demonstration fixture rather than the intended core customer experience.
+
+**Implementation note:** The API-drift workflow is the current prototype focus. Broader SDK, MCP, webhook, AI remediation, and production CI/CD capabilities should be treated as future work unless separately implemented and tested.
+
+## Example Scenario
+
+### API Response Drift
 
 Suppose a payment dependency initially returns:
 
@@ -127,7 +219,7 @@ Suppose a payment dependency initially returns:
 }
 ```
 
-After a provider-side change, it returns:
+Following a provider-side change, the response becomes:
 
 ```json
 {
@@ -135,54 +227,94 @@ After a provider-side change, it returns:
 }
 ```
 
-An application that still reads `amount` may fail or produce incorrect results.
+An application that continues to read `amount` may fail or produce an incorrect result.
 
-AdaptX's intended workflow is to:
+Rebase's intended workflow is to:
 
 1. Detect the response contract change.
 2. Identify consumers that rely on the old field.
 3. Explain the likely downstream impact.
-4. Propose a compatibility adapter that handles the new response.
+4. Propose a backward-compatible adapter.
 5. Run relevant tests against the modified behavior.
 6. Verify recovery before allowing the fix to proceed.
 
-A successful schema check alone is not sufficient: the resulting application behavior must also be validated.
+The goal is not simply to make a failing contract test pass. It is to restore the expected application behavior and provide evidence that the remediation works.
 
 ## Safety and Reliability
 
-Automated remediation can introduce new failures if changes are applied without sufficient validation.
+Automated remediation can introduce additional failures if generated changes are applied without sufficient validation.
 
-AdaptX is designed to prioritize:
+Rebase is designed around the following principles:
 
 - Human review for high-risk or ambiguous changes.
 - Regression testing before applying generated fixes.
 - Explicit policies for automatic remediation.
-- Verification of recovery rather than relying only on successful patch application.
-- Auditability of detected changes and remediation decisions.
+- Recovery verification after remediation.
+- Traceability of detected changes and remediation decisions.
 - Protection against semantically dangerous changes that preserve the same schema.
 
-For example, a tool that changes its meaning from “deactivate account” to “permanently delete account” may retain the same parameter schema. Such a change should trigger semantic risk analysis and human review rather than automatic remediation.
+### Example: Semantic Risk
+
+Imagine an MCP tool originally described as:
+
+> Deactivate account.
+
+The provider changes the tool's meaning to:
+
+> Permanently delete account.
+
+The input schema may remain unchanged, but the consequences are significantly different.
+
+A schema-only validator could miss this semantic risk. Rebase aims to identify the changed meaning and require human review rather than automatically approving a potentially destructive action.
+
+This scenario represents an intended safety capability and should be demonstrated only after the corresponding analysis and approval logic has been implemented.
 
 ## Existing Tools and Differentiation
 
-API contract testing, dependency update automation, observability, and security remediation are established areas with existing solutions.
+Dependency contract testing, dependency update automation, observability, and security remediation are established areas with existing solutions.
 
-AdaptX is being explored as a unified workflow that connects:
+Examples of relevant tools include:
 
-- Dependency drift detection.
+- **Pact:** Consumer-driven contract testing.
+- **Renovate:** Automated dependency updates and migration workflows.
+- **Snyk:** Dependency security analysis and vulnerability remediation.
+
+These tools address different parts of the broader dependency-management problem.
+
+Rebase is exploring a unified workflow connecting:
+
+- Unexpected dependency drift detection.
 - Downstream impact analysis.
 - Compatibility fix generation.
 - Regression validation.
-- Safety-gated application.
-- Verified recovery.
+- Safety-gated remediation.
+- Verified application recovery.
 
-This is the proposed differentiation, not a claim that existing platforms cannot perform any of these functions. A detailed comparison against existing tools is required to establish the precise product and research gap.
+This is the proposed product differentiation, not a claim that existing tools cannot perform any of these functions. A deeper feature comparison is necessary to establish the precise market and research gap.
+
+## Target Users
+
+Rebase is intended for:
+
+- DevOps engineers.
+- Platform engineering teams.
+- Backend developers maintaining distributed applications.
+- Site Reliability Engineering (SRE) teams.
+- Engineering teams working with multiple external dependencies.
+
+These teams often need to maintain compatibility across systems they do not fully control.
 
 ## Roadmap
+
+### Current Prototype Focus
 
 - [x] Establish a simulated dependency-change scenario.
 - [x] Build the initial API-drift demonstration workflow.
 - [x] Integrate the initial dashboard and compatibility-remediation flow.
+- [x] Demonstrate contract validation and recovery for the selected scenario.
+
+### Planned Development
+
 - [ ] Develop an engineering-focused dashboard experience.
 - [ ] Expand dependency impact analysis across representative service workflows.
 - [ ] Add a representative SDK compatibility scenario.
@@ -191,28 +323,18 @@ This is the proposed differentiation, not a claim that existing platforms cannot
 - [ ] Strengthen semantic risk assessment and human-approval policies.
 - [ ] Integrate with CI/CD pipelines.
 - [ ] Expand automated regression testing and recovery evidence.
-- [ ] Evaluate the system against existing dependency-resilience and remediation tools.
+- [ ] Evaluate Rebase against existing dependency-resilience and remediation tools.
 
-Roadmap items should be marked complete only after the corresponding functionality has been implemented and tested.
-
-## Who Is It For?
-
-AdaptX is intended for:
-
-- DevOps engineers.
-- Platform engineering teams.
-- Backend developers working with distributed systems.
-- Site Reliability Engineering (SRE) teams.
-- Teams maintaining applications with multiple external dependencies.
-
-The goal is to reduce the manual effort required to diagnose and recover from unexpected dependency changes while maintaining control over risky modifications.
+Checklist items should be updated to reflect the actual repository state and repeatable test results.
 
 ## Project Vision
 
-**AdaptX aims to make applications more resilient to changes they do not control.**
+**Rebase aims to make applications more resilient to changes they do not control.**
 
-By connecting dependency intelligence, impact analysis, compatibility remediation, and verified recovery, AdaptX seeks to help engineering teams spend less time firefighting dependency failures and more time building reliable systems.
+By connecting dependency intelligence, impact analysis, compatibility remediation, and verified recovery, Rebase seeks to help engineering teams spend less time firefighting dependency failures and more time building reliable systems.
+
+The long-term vision is a platform that can observe dependency changes, understand their consequences, recommend safe fixes, validate those fixes, and support controlled recovery across modern software ecosystems.
 
 ---
 
-*AdaptX is an evolving prototype. Feature availability and automation guarantees depend on the implementation, validation coverage, and configured safety policies.*
+*Rebase is an evolving prototype. Feature availability and automation guarantees depend on the implementation, validation coverage, and configured safety policies.*
