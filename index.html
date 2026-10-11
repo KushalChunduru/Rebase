@@ -62,6 +62,17 @@
             </li>
           </ul>
 
+          <div class="nav-section-title">LIVE DEMO</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#live-apis" class="nav-link" data-view="live-apis" id="nav-live-apis">
+                <i data-lucide="radio"></i>
+                <span>Live APIs</span>
+                <span class="nav-dot-live"></span>
+              </a>
+            </li>
+          </ul>
+
           <div class="nav-section-title">OBSERVABILITY</div>
           <ul class="nav-list">
             <li class="nav-item">
@@ -658,6 +669,280 @@
               <div class="dep-card-footer">
                 <span>Heartbeat: 2s ago</span>
                 <span>send_push, send_email, send_sms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== VIEW: Live APIs (E-Commerce Demo) ========== -->
+        <div id="view-live-apis" class="view-container hidden">
+          <div class="view-page-header">
+            <div>
+              <h2 class="view-page-title">Live API Drift Demo</h2>
+              <p class="view-page-sub">Real-time demonstration — watch Rebase detect and fix API drift on a live e-commerce backend powered by Razorpay.</p>
+            </div>
+            <span class="view-header-tag live-tag"><span class="status-pulse-dot"></span> LIVE DEMO</span>
+          </div>
+
+          <!-- Webhook Pipeline Status -->
+          <div class="live-demo-status-bar">
+            <div class="demo-status-item">
+              <span class="demo-status-dot green"></span>
+              <span class="demo-status-label">Webhook Endpoint</span>
+              <span class="demo-status-val" id="demo-ecom-status">/webhooks/razorpay</span>
+            </div>
+            <div class="demo-status-item">
+              <span class="demo-status-dot" id="demo-razorpay-dot"></span>
+              <span class="demo-status-label">Razorpay Events</span>
+              <span class="demo-status-val" id="demo-razorpay-status">Not Connected</span>
+            </div>
+            <div class="demo-status-item">
+              <span class="demo-status-dot" id="demo-rebase-dot"></span>
+              <span class="demo-status-label">Rebase Observer</span>
+              <span class="demo-status-val" id="demo-rebase-status">Idle</span>
+            </div>
+          </div>
+
+          <!-- Webhook Event Cards -->
+          <h3 class="live-section-title"><i data-lucide="webhook"></i> Monitored Webhook Events</h3>
+          <div class="dep-cards-grid">
+
+            <!-- payment.captured -->
+            <div class="dep-card live-api-card" data-api="webhook-payment-captured">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-emerald"><i data-lucide="credit-card"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Subscribed</span>
+              </div>
+              <h3 class="dep-card-name">payment.captured</h3>
+              <p class="dep-card-desc">Fired when a payment is successfully captured on an order</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">POST /webhooks/razorpay</span>
+                <span class="dep-meta-pill lang">Webhook</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Payload: <code>payment.entity</code> &rarr; <code>amount</code>, <code>status</code>, <code>method</code></span>
+              </div>
+            </div>
+
+            <!-- order.paid -->
+            <div class="dep-card live-api-card" data-api="webhook-order-paid">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-blue"><i data-lucide="shopping-cart"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Subscribed</span>
+              </div>
+              <h3 class="dep-card-name">order.paid</h3>
+              <p class="dep-card-desc">Fired when all payments for an order are completed</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">POST /webhooks/razorpay</span>
+                <span class="dep-meta-pill lang">Webhook</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Payload: <code>order.entity</code> &rarr; <code>amount_paid</code>, <code>receipt</code>, <code>status</code></span>
+              </div>
+            </div>
+
+            <!-- payment.failed -->
+            <div class="dep-card live-api-card" data-api="webhook-payment-failed">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-orange"><i data-lucide="alert-circle"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Subscribed</span>
+              </div>
+              <h3 class="dep-card-name">payment.failed</h3>
+              <p class="dep-card-desc">Fired when a payment attempt fails (card declined, timeout, etc.)</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">POST /webhooks/razorpay</span>
+                <span class="dep-meta-pill lang">Webhook</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Payload: <code>payment.entity</code> &rarr; <code>error_code</code>, <code>error_description</code></span>
+              </div>
+            </div>
+
+            <!-- refund.processed -->
+            <div class="dep-card live-api-card" data-api="webhook-refund-processed">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-purple"><i data-lucide="rotate-ccw"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Subscribed</span>
+              </div>
+              <h3 class="dep-card-name">refund.processed</h3>
+              <p class="dep-card-desc">Fired when a refund is successfully processed</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">POST /webhooks/razorpay</span>
+                <span class="dep-meta-pill lang">Webhook</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Payload: <code>refund.entity</code> &rarr; <code>amount</code>, <code>payment_id</code>, <code>speed_processed</code></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Webhook Event Feed -->
+          <h3 class="live-section-title"><i data-lucide="activity"></i> Live Webhook Stream</h3>
+          <div class="live-webhook-feed" id="live-webhook-feed">
+            <div class="webhook-feed-empty" id="webhook-feed-empty">
+              <i data-lucide="radio"></i>
+              <span>Waiting for webhook events... Send a test payment or use cURL to trigger.</span>
+            </div>
+          </div>
+
+          <!-- Webhook Payload Schema (Baseline) -->
+          <h3 class="live-section-title"><i data-lucide="file-json"></i> Webhook Payload Schema (Baseline)</h3>
+          <div class="live-schema-grid">
+            <div class="schema-block">
+              <div class="schema-block-header">
+                <span class="schema-method webhook">EVENT</span>
+                <span>payment.captured</span>
+              </div>
+              <pre class="schema-code"><code>{
+  "event": "payment.captured",
+  "payload": {
+    "payment": {
+      "entity": {
+        "id": "pay_FHR9UMhnkJbGJ0",
+        "amount": 50000,
+        "currency": "INR",
+        "status": "captured",
+        "method": "upi",
+        "order_id": "order_DBJOWzybf0sJbb",
+        "description": "Order #12345",
+        "email": "customer@example.com",
+        "contact": "+919876543210"
+      }
+    }
+  }
+}</code></pre>
+              <div class="schema-label">Incoming Webhook Payload</div>
+            </div>
+
+            <div class="schema-block">
+              <div class="schema-block-header">
+                <span class="schema-method webhook">EVENT</span>
+                <span>order.paid</span>
+              </div>
+              <pre class="schema-code"><code>{
+  "event": "order.paid",
+  "payload": {
+    "order": {
+      "entity": {
+        "id": "order_DBJOWzybf0sJbb",
+        "amount": 50000,
+        "amount_paid": 50000,
+        "currency": "INR",
+        "receipt": "rcpt_12345",
+        "status": "paid",
+        "notes": {
+          "item": "Wireless Headphones"
+        }
+      }
+    }
+  }
+}</code></pre>
+              <div class="schema-label">Incoming Webhook Payload</div>
+            </div>
+
+            <div class="schema-block">
+              <div class="schema-block-header">
+                <span class="schema-method webhook">EVENT</span>
+                <span>refund.processed</span>
+              </div>
+              <pre class="schema-code"><code>{
+  "event": "refund.processed",
+  "payload": {
+    "refund": {
+      "entity": {
+        "id": "rfnd_FHR9UMhnkJbGJ1",
+        "amount": 50000,
+        "currency": "INR",
+        "payment_id": "pay_FHR9UMhnkJbGJ0",
+        "status": "processed",
+        "speed_processed": "normal"
+      }
+    }
+  }
+}</code></pre>
+              <div class="schema-label">Incoming Webhook Payload</div>
+            </div>
+          </div>
+
+          <!-- Demo Drift Scenarios -->
+          <h3 class="live-section-title"><i data-lucide="alert-triangle"></i> Webhook Drift Scenarios (Trigger During Demo)</h3>
+          <div class="drift-scenarios-grid">
+            <div class="drift-scenario-card">
+              <div class="drift-scenario-header">
+                <span class="drift-badge safe">AUTO-FIX</span>
+                <span class="drift-risk low">LOW RISK</span>
+              </div>
+              <h4>Field Rename: <code>receipt</code> &rarr; <code>receipt_id</code></h4>
+              <p>Razorpay renames a field in the <code>order.paid</code> webhook payload. Structural change, semantic equivalent. Rebase generates adapter automatically.</p>
+            </div>
+            <div class="drift-scenario-card">
+              <div class="drift-scenario-header">
+                <span class="drift-badge danger">BLOCKED</span>
+                <span class="drift-risk critical">CRITICAL</span>
+              </div>
+              <h4>Semantic Shift: <code>status: "captured"</code> meaning change</h4>
+              <p>In <code>payment.captured</code> webhook, "captured" now means "held for review" instead of "payment complete". Schema identical, semantics dangerous. Rebase blocks auto-fix.</p>
+            </div>
+            <div class="drift-scenario-card">
+              <div class="drift-scenario-header">
+                <span class="drift-badge safe">AUTO-FIX</span>
+                <span class="drift-risk moderate">MODERATE</span>
+              </div>
+              <h4>Event Rename: <code>payment.captured</code> &rarr; <code>payment.completed</code></h4>
+              <p>Razorpay changes the event name. Your webhook handler stops matching. Rebase detects the event type drift and maps the new event name to your existing handler.</p>
+            </div>
+          </div>
+
+          <!-- Setup Instructions -->
+          <h3 class="live-section-title"><i data-lucide="terminal"></i> Razorpay Webhook Setup</h3>
+          <div class="setup-instructions-card">
+            <div class="setup-step">
+              <span class="setup-step-num">1</span>
+              <div>
+                <strong>Create Razorpay Account</strong>
+                <p>Go to <code>https://dashboard.razorpay.com/signup</code> and sign up. No business docs needed for test mode.</p>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-step-num">2</span>
+              <div>
+                <strong>Get Test API Keys</strong>
+                <p>Dashboard &rarr; Settings &rarr; API Keys &rarr; Generate Test Key. You'll get <code>key_id</code> (starts with <code>rzp_test_</code>) and <code>key_secret</code>.</p>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-step-num">3</span>
+              <div>
+                <strong>Expose Localhost with ngrok</strong>
+                <p>Razorpay needs a public URL to send webhooks. Run:<br/>
+                <code>npx ngrok http 3000</code><br/>
+                Copy the <code>https://xxxx.ngrok-free.app</code> URL.</p>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-step-num">4</span>
+              <div>
+                <strong>Configure Webhook in Razorpay</strong>
+                <p>Dashboard &rarr; Settings &rarr; Webhooks &rarr; Add New Webhook.<br/>
+                <strong>Webhook URL:</strong> <code>https://xxxx.ngrok-free.app/webhooks/razorpay</code><br/>
+                <strong>Secret:</strong> Create a webhook secret (save it in <code>.env</code> as <code>RAZORPAY_WEBHOOK_SECRET</code>)<br/>
+                <strong>Events:</strong> Select <code>payment.captured</code>, <code>order.paid</code>, <code>payment.failed</code>, <code>refund.processed</code></p>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-step-num">5</span>
+              <div>
+                <strong>Add Keys to .env</strong>
+                <pre class="setup-code"><code>RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=your_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret</code></pre>
+              </div>
+            </div>
+            <div class="setup-step">
+              <span class="setup-step-num">6</span>
+              <div>
+                <strong>Trigger a Test Payment</strong>
+                <p>Use Razorpay's test card <code>4111 1111 1111 1111</code> (any future expiry, any CVV) or UPI test ID <code>success@razorpay</code>. After payment, Razorpay will POST the <code>payment.captured</code> webhook to your endpoint. Rebase will observe the payload and capture baseline.</p>
               </div>
             </div>
           </div>

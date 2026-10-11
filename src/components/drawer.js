@@ -35,10 +35,10 @@ export function openApiDrawer(api, callbacks) {
       <div class="drawer-code-box">
         <div><strong>Base URL:</strong> ${api.baseUrl}</div>
         <div><strong>Path:</strong> <code>${api.endpoint}</code></div>
-        <div><strong>Auth Protocol:</strong> ${api.behaviour.auth}</div>
-        <div><strong>Data Format:</strong> ${api.behaviour.format} (${api.behaviour.version})</div>
-        ${api.behaviour.rateLimit ? `<div><strong>Rate Limit:</strong> ${api.behaviour.rateLimit}</div>` : ''}
-        ${api.behaviour.pagination ? `<div><strong>Pagination:</strong> ${api.behaviour.pagination}</div>` : ''}
+        <div><strong>Auth Protocol:</strong> ${api.behaviour?.auth || 'none'}</div>
+        <div><strong>Data Format:</strong> ${api.behaviour?.format || 'JSON'} (${api.behaviour?.version || 'v1'})</div>
+        ${api.behaviour?.rateLimit ? `<div><strong>Rate Limit:</strong> ${api.behaviour.rateLimit}</div>` : ''}
+        ${api.behaviour?.pagination ? `<div><strong>Pagination:</strong> ${api.behaviour.pagination}</div>` : ''}
       </div>
     </div>
 
@@ -47,7 +47,7 @@ export function openApiDrawer(api, callbacks) {
       <div class="drawer-code-box" id="drawer-curl-snippet">
         curl -X ${api.method} "${api.baseUrl}${api.path}" \\<br />
         &nbsp;&nbsp;-H "Content-Type: application/json" \\<br />
-        &nbsp;&nbsp;-H "Authorization: ${api.behaviour.auth === 'no authentication' ? 'None' : 'Bearer $SECRET_KEY'}"
+        &nbsp;&nbsp;-H "Authorization: ${api.behaviour?.auth === 'no authentication' ? 'None' : 'Bearer $SECRET_KEY'}"
       </div>
     </div>
 

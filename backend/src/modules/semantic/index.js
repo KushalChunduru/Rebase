@@ -18,8 +18,20 @@ function computeSchemaCompat(diffs) {
   const schemaDiffs = diffs.filter(d => d.layer === 'schema');
   if (schemaDiffs.length === 0) return 100;
 
+  const schemaRemovals = schemaDiffs.filter(d => d.type === 'field-removed');
+  const schemaAdditions = schemaDiffs.filter(d => d.type === 'field-added');
+  const renamePairs = detectRenames(schemaRemovals, schemaAdditions);
+  const renamedPaths = new Set([
+    ...renamePairs.map(p => p.removed),
+    ...renamePairs.map(p => p.added)
+  ]);
+
   let penalty = 0;
   for (const diff of schemaDiffs) {
+    if (renamedPaths.has(diff.path)) {
+      penalty += 3;
+      continue;
+    }
     switch (diff.type) {
       case 'field-removed':    penalty += 15; break;
       case 'field-added':      penalty += 5;  break;
@@ -54,18 +66,24 @@ function computeSemanticCompat(diffs) {
   }
 
   const renamePairs = detectRenames(fieldRemovals, fieldAdditions);
+  const uniqueRenames = new Set();
   for (const pair of renamePairs) {
-    score -= 5;
+    const key = stripIndices(pair.removed) + '→' + stripIndices(pair.added);
+    uniqueRenames.add(key);
   }
+  score -= uniqueRenames.size * 5;
 
   const unresolvedRemovals = fieldRemovals.filter(
     r => !renamePairs.some(p => p.removed === r.path)
   );
-  for (const rem of unresolvedRemovals) {
-    score -= 15;
-  }
+  const uniqueUnresolved = new Set(unresolvedRemovals.map(r => stripIndices(r.path)));
+  score -= uniqueUnresolved.size * 15;
 
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function stripIndices(path) {
+  return path.replace(/\[\d+\]\./g, '');
 }
 
 function isDescriptionField(path) {
@@ -109,18 +127,17 @@ function detectRenames(removals, additions) {
   const usedAdditions = new Set();
 
   for (const rem of removals) {
-    if (rem.layer !== 'data') continue;
     for (const add of additions) {
-      if (add.layer !== 'data' || usedAdditions.has(add.path)) continue;
+      if (add.layer !== rem.layer || usedAdditions.has(add.path)) continue;
 
-      const remParent = rem.path.replace(/\.[^.]+$/, '');
-      const addParent = add.path.replace(/\.[^.]+$/, '');
+      const remParent = rem.path.includes('.') ? rem.path.replace(/\.[^.]+$/, '') : '';
+      const addParent = add.path.includes('.') ? add.path.replace(/\.[^.]+$/, '') : '';
       if (remParent !== addParent) continue;
 
-      const sameType = typeof rem.baseline === typeof add.current;
       const sameValue = JSON.stringify(rem.baseline) === JSON.stringify(add.current);
+      const bothSameLayer = rem.layer === add.layer;
 
-      if (sameType && sameValue) {
+      if (sameValue || (bothSameLayer && rem.layer === 'schema')) {
         pairs.push({ removed: rem.path, added: add.path, value: rem.baseline });
         usedAdditions.add(add.path);
         break;

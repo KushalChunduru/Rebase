@@ -12,7 +12,7 @@ export function renderTable(dependencies, filter, searchQuery, callbacks) {
       const q = searchQuery.toLowerCase();
       const fields = [
         api.name, api.description, api.baseUrl,
-        api.endpoint, api.behaviour.auth || '', api.status
+        api.endpoint, api.behaviour?.auth || '', api.status
       ];
       if (!fields.some(f => f.toLowerCase().includes(q))) return false;
     }
@@ -54,9 +54,9 @@ export function renderTable(dependencies, filter, searchQuery, callbacks) {
     const methodClass = api.method.toLowerCase();
 
     let extraBehaviour = '';
-    if (api.behaviour.rateLimit) {
+    if (api.behaviour?.rateLimit) {
       extraBehaviour = `Rate limit: ${api.behaviour.rateLimit}`;
-    } else if (api.behaviour.pagination) {
+    } else if (api.behaviour?.pagination) {
       extraBehaviour = `Pagination: ${api.behaviour.pagination}`;
     }
 
@@ -107,9 +107,9 @@ export function renderTable(dependencies, filter, searchQuery, callbacks) {
       <td class="col-behaviour">
         <div class="behaviour-cell">
           <div class="behaviour-tags-row">
-            <span class="behaviour-pill">${api.behaviour.format}</span>
-            <span class="behaviour-pill auth">${api.behaviour.auth}</span>
-            <span class="behaviour-pill">${api.behaviour.version}</span>
+            <span class="behaviour-pill">${api.behaviour?.format || 'JSON'}</span>
+            <span class="behaviour-pill auth">${api.behaviour?.auth || 'none'}</span>
+            <span class="behaviour-pill">${api.behaviour?.version || 'v1'}</span>
           </div>
           ${extraBehaviour ? `<div class="behaviour-extra-row">${extraBehaviour}</div>` : ''}
         </div>

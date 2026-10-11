@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "node scripts/start-all.js",
     "build": "vite build",
     "preview": "vite preview"
   },

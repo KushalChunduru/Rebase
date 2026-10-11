@@ -10,6 +10,7 @@ import { startPipeline, abortPipeline, isPipelineActive, isPipelineModalOpen } f
 import { openInspectModal, closeInspectModal } from './components/inspect.js';
 import { openApiDrawer, closeApiDrawer, handleDrawerPing } from './components/drawer.js';
 import { renderCatalog, openBrowseModal, closeBrowseModal, openAddApiModal, closeAddApiModal } from './components/catalog.js';
+import { connectWebSocket, onWebSocketMessage, isConnected } from './services/webhook-ws.js';
 
 // ============================================================
 // INITIALIZATION
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   refreshIcons();
 
   await connectBackend();
+  initWebhookStream();
 });
 
 async function connectBackend() {
@@ -49,6 +51,186 @@ async function connectBackend() {
   } else {
     store.setBackendConnected(false);
     console.info('Backend offline — using mock data');
+  }
+}
+
+// ============================================================
+// WEBHOOK WEBSOCKET STREAM — real-time Razorpay events
+// ============================================================
+function initWebhookStream() {
+  connectWebSocket();
+
+  onWebSocketMessage((data) => {
+    updateLiveApiStatus(data);
+    addWebhookFeedItem(data);
+
+    if (data.type === 'ws:connected') {
+      showToast('WebSocket connected — listening for webhooks', 'success');
+    }
+
+    if (data.type === 'webhook:received' && data.status === 'baseline_captured') {
+      showToast(`Baseline captured: ${data.event}`, 'success');
+      store.addTelemetryEvent({
+        id: 'wh-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'ok',
+        source: `Razorpay (${data.event})`,
+        message: `Webhook baseline captured — schema recorded`,
+        badge: 'BASELINE',
+        actionable: false,
+        simulated: false
+      });
+    }
+
+    if (data.type === 'webhook:received' && data.status === 'schema_match') {
+      store.addTelemetryEvent({
+        id: 'wh-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'ok',
+        source: `Razorpay (${data.event})`,
+        message: `Webhook received — schema matches baseline`,
+        badge: 'OK',
+        actionable: false,
+        simulated: false
+      });
+    }
+
+    if (data.type === 'webhook:drift') {
+      const fieldCount = data.drift?.length || 0;
+      showToast(`DRIFT DETECTED on ${data.event} — ${fieldCount} field(s) changed!`, 'error');
+      store.addTelemetryEvent({
+        id: 'wh-drift-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'warn',
+        source: `Razorpay (${data.event})`,
+        message: `WEBHOOK DRIFT — ${fieldCount} schema change(s) detected`,
+        badge: 'DRIFT',
+        actionable: true,
+        simulated: false
+      });
+
+      // Auto-trigger pipeline on drift detection
+      if (!isPipelineActive() && !isPipelineModalOpen()) {
+        setTimeout(() => {
+          startPipeline('webhook-rename', {
+            useBackend: false,
+            onComplete: handleMockPipelineComplete,
+            driftData: data
+          });
+        }, 1500);
+      }
+    }
+  });
+}
+
+function addWebhookFeedItem(data) {
+  if (data.type !== 'webhook:received' && data.type !== 'webhook:drift') return;
+
+  const feed = document.getElementById('live-webhook-feed');
+  if (!feed) return;
+
+  const empty = document.getElementById('webhook-feed-empty');
+  if (empty) empty.remove();
+
+  const time = new Date().toTimeString().slice(0, 8);
+  const isDrift = data.type === 'webhook:drift';
+  const statusClass = isDrift ? 'drift' : (data.status === 'baseline_captured' ? 'baseline' : 'match');
+  const badgeText = isDrift ? 'DRIFT' : (data.status === 'baseline_captured' ? 'BASELINE' : 'OK');
+
+  let message = '';
+  if (isDrift) {
+    message = `Schema drift detected — ${data.drift.length} field(s) changed`;
+  } else if (data.status === 'baseline_captured') {
+    message = 'First event received — schema captured as baseline';
+  } else {
+    message = 'Payload matches baseline schema';
+  }
+
+  let driftFieldsHtml = '';
+  if (isDrift && data.drift) {
+    driftFieldsHtml = '<div class="webhook-feed-drift-fields">';
+    for (const d of data.drift) {
+      const shortField = d.field.split('.').pop();
+      driftFieldsHtml += `<span class="webhook-drift-field ${d.change}">${d.change === 'removed' ? '−' : d.change === 'added' ? '+' : '~'} ${shortField}</span>`;
+    }
+    driftFieldsHtml += '</div>';
+  }
+
+  const item = document.createElement('div');
+  item.className = 'webhook-feed-item';
+  item.innerHTML = `
+    <span class="webhook-feed-dot ${statusClass}"></span>
+    <div class="webhook-feed-body">
+      <div class="webhook-feed-header">
+        <span class="webhook-feed-event">${data.event}</span>
+        <span class="webhook-feed-badge ${statusClass}">${badgeText}</span>
+      </div>
+      <div class="webhook-feed-message">${message}</div>
+      ${driftFieldsHtml}
+    </div>
+    <span class="webhook-feed-time">${time}</span>
+  `;
+
+  feed.insertBefore(item, feed.firstChild);
+
+  // Keep max 20 items
+  while (feed.children.length > 20) {
+    feed.removeChild(feed.lastChild);
+  }
+
+  refreshIcons();
+}
+
+const WEBHOOK_CARD_MAP = {
+  'payment.captured': 'webhook-payment-captured',
+  'order.paid': 'webhook-order-paid',
+  'payment.failed': 'webhook-payment-failed',
+  'refund.processed': 'webhook-refund-processed'
+};
+
+function updateLiveApiStatus(data) {
+  const razorpayDot = document.getElementById('demo-razorpay-dot');
+  const razorpayStatus = document.getElementById('demo-razorpay-status');
+  const rebaseDot = document.getElementById('demo-rebase-dot');
+  const rebaseStatus = document.getElementById('demo-rebase-status');
+
+  if (data.type === 'ws:connected') {
+    if (rebaseDot) rebaseDot.classList.add('green');
+    if (rebaseStatus) rebaseStatus.textContent = 'Watching';
+  }
+
+  if (data.type === 'ws:disconnected') {
+    if (rebaseDot) rebaseDot.classList.remove('green');
+    if (rebaseStatus) rebaseStatus.textContent = 'Disconnected';
+  }
+
+  if (data.type === 'webhook:received' || data.type === 'webhook:drift') {
+    if (razorpayDot) razorpayDot.classList.add('green');
+    if (razorpayStatus) razorpayStatus.textContent = `Last: ${data.event}`;
+
+    const cardId = WEBHOOK_CARD_MAP[data.event];
+    if (cardId) {
+      const card = document.querySelector(`[data-api="${cardId}"]`);
+      if (card) {
+        const badge = card.querySelector('.dep-card-badge');
+
+        if (data.type === 'webhook:drift') {
+          badge.className = 'dep-card-badge review-required';
+          badge.innerHTML = '<span class="status-pulse-dot"></span> Drift Detected';
+          card.classList.remove('webhook-pulse');
+          card.classList.add('webhook-drift-pulse');
+        } else if (data.status === 'baseline_captured') {
+          badge.innerHTML = '<span class="status-pulse-dot"></span> Baseline Set';
+          card.classList.add('webhook-pulse');
+          setTimeout(() => card.classList.remove('webhook-pulse'), 2000);
+        } else {
+          card.classList.add('webhook-pulse');
+          setTimeout(() => card.classList.remove('webhook-pulse'), 2000);
+        }
+
+        refreshIcons();
+      }
+    }
   }
 }
 
@@ -533,18 +715,19 @@ function switchView(viewId) {
     'overview': 'view-apis',
     'sdks': 'view-sdks',
     'mcp': 'view-mcp',
+    'live-apis': 'view-live-apis',
     'settings': 'view-settings'
   };
   const targetId = viewMap[viewId] || 'view-apis';
-  const views = ['view-apis', 'view-sdks', 'view-mcp', 'view-settings'];
+  const views = ['view-apis', 'view-sdks', 'view-mcp', 'view-live-apis', 'view-settings'];
   views.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', id !== targetId);
   });
 
-  const breadcrumb = document.querySelector('.breadcrumb-current');
+  const breadcrumb = document.querySelector('.breadcrumb-part.current');
   if (breadcrumb) {
-    const labels = { 'view-apis': 'APIs', 'view-sdks': 'SDKs', 'view-mcp': 'MCP Servers', 'view-settings': 'Settings' };
+    const labels = { 'view-apis': 'APIs', 'view-sdks': 'SDKs', 'view-mcp': 'MCP Servers', 'view-live-apis': 'Live APIs', 'view-settings': 'Settings' };
     breadcrumb.textContent = labels[targetId] || 'APIs';
   }
 }
