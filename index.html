@@ -183,6 +183,9 @@
           </div>
         </header>
 
+        <!-- ========== VIEW: APIs ========== -->
+        <div id="view-apis">
+
         <!-- HERO SECTION — Interactive dependency graph -->
         <section class="hero-showcase-card">
           <div class="hero-inner-white">
@@ -434,89 +437,19 @@
           </div>
         </section>
 
-        <!-- HOMAGE SUB-ROW: GOLDEN GUARDIAN & CONNECTOR RIBBON (Like the bottom-left lime & portrait element in the reference) -->
-        <section class="sub-showcase-row">
-          <!-- Silicon AST Shield Card -->
-          <div class="guardian-card">
-            <div class="guardian-image-wrap">
-              <div class="guardian-generated-visual">
-                <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" class="guardian-svg">
-                  <defs>
-                    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#d4f938" stop-opacity="0.2"/>
-                      <stop offset="100%" stop-color="#7952f5" stop-opacity="0.1"/>
-                    </linearGradient>
-                  </defs>
-                  <rect width="280" height="180" fill="url(#shieldGrad)"/>
-                  <g stroke="#d4f938" stroke-width="0.6" fill="none" opacity="0.3">
-                    <rect x="20" y="20" width="40" height="40" rx="4"/>
-                    <rect x="80" y="30" width="30" height="30" rx="4"/>
-                    <rect x="130" y="20" width="50" height="40" rx="4"/>
-                    <rect x="200" y="25" width="35" height="35" rx="4"/>
-                    <rect x="30" y="80" width="45" height="35" rx="4"/>
-                    <rect x="100" y="85" width="60" height="30" rx="4"/>
-                    <rect x="180" y="80" width="40" height="40" rx="4"/>
-                    <rect x="50" y="130" width="50" height="30" rx="4"/>
-                    <rect x="120" y="135" width="40" height="25" rx="4"/>
-                    <rect x="190" y="130" width="55" height="30" rx="4"/>
-                  </g>
-                  <g fill="#d4f938" opacity="0.5">
-                    <circle cx="40" cy="40" r="2"/><circle cx="95" cy="45" r="2"/>
-                    <circle cx="155" cy="40" r="2.5"><animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/></circle>
-                    <circle cx="217" cy="42" r="2"/><circle cx="52" cy="97" r="2"/>
-                    <circle cx="130" cy="100" r="2.5"/><circle cx="200" cy="100" r="2"/>
-                  </g>
-                  <path d="M40 40 L95 45 L155 40 L217 42" stroke="#22d3ee" stroke-width="0.8" fill="none" opacity="0.4" stroke-dasharray="4 3">
-                    <animate attributeName="stroke-dashoffset" values="0;-14" dur="3s" repeatCount="indefinite"/>
-                  </path>
-                  <path d="M52 97 L130 100 L200 100" stroke="#d4f938" stroke-width="0.8" fill="none" opacity="0.3" stroke-dasharray="4 3">
-                    <animate attributeName="stroke-dashoffset" values="0;-14" dur="4s" repeatCount="indefinite"/>
-                  </path>
-                </svg>
-              </div>
-              <div class="guardian-badge-pill">
-                <i data-lucide="shield"></i>
-                <span>DEPENDENCY TELEMETRY</span>
-              </div>
+        <!-- LIVE TELEMETRY STREAM -->
+        <section class="telemetry-stream-section">
+          <div class="telemetry-header-row">
+            <div class="telemetry-title-group">
+              <span class="telemetry-pulse-dot"></span>
+              <h3 class="telemetry-title">Live Stream</h3>
+              <span class="telemetry-tag">TELEMETRY</span>
             </div>
-            <div class="guardian-content">
-              <h4>Automated Contract Shields</h4>
-              <p>Every external endpoint mirrored against production AST runtime validators.</p>
-            </div>
+            <span class="telemetry-timestamp">11.10.2026 // LIVE</span>
           </div>
 
-          <!-- Connecting Neck / Stem Element (Homage to reference connecting fillet) -->
-          <div class="connector-stem-card">
-            <div class="stem-header">
-              <div class="stem-badge">
-                <i data-lucide="activity"></i>
-                <span>LIVE TELEMETRY STREAM</span>
-              </div>
-              <div class="stem-time">24.10.2026 // LIVE</div>
-            </div>
-            <div class="stem-capsules-wrap">
-              <div class="stem-capsule-item">
-                <span class="capsule-indicator-dot"></span>
-                <span class="capsule-text">Stripe API response contracts validated across 14 payment workers</span>
-                <span class="capsule-pill-code">200 OK</span>
-                <div class="capsule-triad-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="#d4f938">
-                    <circle cx="6" cy="12" r="3"/>
-                    <circle cx="18" cy="12" r="3"/>
-                    <circle cx="12" cy="6" r="3"/>
-                  </svg>
-                </div>
-              </div>
-
-              <div class="stem-capsule-item alert-border">
-                <span class="capsule-indicator-dot orange-dot"></span>
-                <span class="capsule-text">Customer Directory <code>v2</code> breaking field: <code>user_tier</code> required</span>
-                <span class="capsule-pill-code orange">BREAKING</span>
-                <button class="capsule-pill-btn" id="btn-stem-details">
-                  DETAILS
-                </button>
-              </div>
-            </div>
+          <div class="telemetry-feed" id="telemetry-feed">
+            <!-- Rendered dynamically by telemetry.js -->
           </div>
         </section>
 
@@ -589,7 +522,205 @@
             </div>
           </div>
         </section>
+
+        </div><!-- /view-apis -->
+
+        <!-- ========== VIEW: SDKs ========== -->
+        <div id="view-sdks" class="view-container hidden">
+          <div class="view-page-header">
+            <div>
+              <h2 class="view-page-title">SDK Registry</h2>
+              <p class="view-page-sub">Track SDK versions, method signatures, and runtime behaviour across your dependency tree.</p>
+            </div>
+            <span class="view-header-tag">4 PACKAGES TRACKED</span>
+          </div>
+          <div class="dep-cards-grid">
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-blue"><i data-lucide="terminal"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
+              </div>
+              <h3 class="dep-card-name">Python SDK</h3>
+              <p class="dep-card-desc">stripe-python client library</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">v8.4.0</span>
+                <span class="dep-meta-pill lang">Python</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Last verified: 2 min ago</span>
+                <span>14 methods tracked</span>
+              </div>
+            </div>
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-emerald"><i data-lucide="code"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
+              </div>
+              <h3 class="dep-card-name">Node.js SDK</h3>
+              <p class="dep-card-desc">@afterform/node client</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">v4.1.2</span>
+                <span class="dep-meta-pill lang">TypeScript</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Last verified: 30 sec ago</span>
+                <span>22 methods tracked</span>
+              </div>
+            </div>
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-cyan"><i data-lucide="box"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
+              </div>
+              <h3 class="dep-card-name">Go SDK</h3>
+              <p class="dep-card-desc">afterform-go module</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">v2.0.7</span>
+                <span class="dep-meta-pill lang">Go</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Last verified: 1 min ago</span>
+                <span>9 methods tracked</span>
+              </div>
+            </div>
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-orange"><i data-lucide="cog"></i></div>
+                <span class="dep-card-badge review-required"><span class="status-pulse-dot"></span> Review</span>
+              </div>
+              <h3 class="dep-card-name">Rust SDK</h3>
+              <p class="dep-card-desc">afterform-rs crate</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">v1.3.0</span>
+                <span class="dep-meta-pill lang">Rust</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Last verified: 5 min ago</span>
+                <span>6 methods tracked</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== VIEW: MCP ========== -->
+        <div id="view-mcp" class="view-container hidden">
+          <div class="view-page-header">
+            <div>
+              <h2 class="view-page-title">MCP Servers</h2>
+              <p class="view-page-sub">Monitor Model Context Protocol tool contracts, parameter schemas, and semantic behaviour.</p>
+            </div>
+            <span class="view-header-tag live-tag"><span class="status-pulse-dot"></span> 3 LIVE CONNECTIONS</span>
+          </div>
+          <div class="dep-cards-grid">
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-purple"><i data-lucide="shield"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
+              </div>
+              <h3 class="dep-card-name">User Auth MCP</h3>
+              <p class="dep-card-desc">Authentication & user management tools</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">5 tools</span>
+                <span class="dep-meta-pill">SSE transport</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Heartbeat: 4s ago</span>
+                <span>get_user, delete_user, update_user...</span>
+              </div>
+            </div>
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-emerald"><i data-lucide="database"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
+              </div>
+              <h3 class="dep-card-name">Data Pipeline MCP</h3>
+              <p class="dep-card-desc">ETL orchestration & data sync tools</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">8 tools</span>
+                <span class="dep-meta-pill">stdio transport</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Heartbeat: 1s ago</span>
+                <span>sync_table, run_pipeline, query_data...</span>
+              </div>
+            </div>
+            <div class="dep-card">
+              <div class="dep-card-top">
+                <div class="dep-card-icon bg-amber"><i data-lucide="bell"></i></div>
+                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
+              </div>
+              <h3 class="dep-card-name">Notification MCP</h3>
+              <p class="dep-card-desc">Push notification & alerting tools</p>
+              <div class="dep-card-meta">
+                <span class="dep-meta-pill">3 tools</span>
+                <span class="dep-meta-pill">SSE transport</span>
+              </div>
+              <div class="dep-card-footer">
+                <span>Heartbeat: 2s ago</span>
+                <span>send_push, send_email, send_sms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== VIEW: Settings ========== -->
+        <div id="view-settings" class="view-container hidden">
+          <div class="view-page-header">
+            <div>
+              <h2 class="view-page-title">Settings</h2>
+              <p class="view-page-sub">Configure monitoring thresholds, notification preferences, and pipeline behaviour.</p>
+            </div>
+          </div>
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h4><i data-lucide="activity"></i> Monitoring</h4>
+              <div class="settings-row"><span>Poll interval</span><span class="settings-val">30 seconds</span></div>
+              <div class="settings-row"><span>Schema diff sensitivity</span><span class="settings-val">High</span></div>
+              <div class="settings-row"><span>Baseline auto-update</span><span class="settings-val">Enabled</span></div>
+            </div>
+            <div class="settings-card">
+              <h4><i data-lucide="bell"></i> Notifications</h4>
+              <div class="settings-row"><span>Breaking changes</span><span class="settings-val on">Alert</span></div>
+              <div class="settings-row"><span>Auto-fix applied</span><span class="settings-val">Info</span></div>
+              <div class="settings-row"><span>Blocked changes</span><span class="settings-val on">Alert</span></div>
+            </div>
+            <div class="settings-card">
+              <h4><i data-lucide="shield-check"></i> Safety Gate</h4>
+              <div class="settings-row"><span>Auto-fix threshold</span><span class="settings-val">Confidence &ge; 90%</span></div>
+              <div class="settings-row"><span>Max risk for auto-fix</span><span class="settings-val">MODERATE</span></div>
+              <div class="settings-row"><span>Require sandbox pass</span><span class="settings-val on">Yes</span></div>
+            </div>
+          </div>
+        </div>
+
       </main>
+
+      <!-- ========== SIMULATION CONTROL PANEL (floating) ========== -->
+      <div class="sim-control-panel" id="sim-control-panel">
+        <div class="sim-panel-header">
+          <i data-lucide="flask-conical"></i>
+          <span>SIMULATION LAB</span>
+        </div>
+        <div class="sim-panel-buttons">
+          <button class="sim-btn sim-btn-api" id="sim-api-change" data-scenario="api-rename">
+            <i data-lucide="arrow-right-left"></i>
+            <span>API Field Rename</span>
+          </button>
+          <button class="sim-btn sim-btn-danger" id="sim-mcp-danger" data-scenario="mcp-danger">
+            <i data-lucide="shield-alert"></i>
+            <span>MCP Semantic Danger</span>
+          </button>
+          <button class="sim-btn sim-btn-webhook" id="sim-webhook-change" data-scenario="webhook-rename">
+            <i data-lucide="webhook"></i>
+            <span>Webhook Event Rename</span>
+          </button>
+          <div class="sim-divider"></div>
+          <button class="sim-btn sim-btn-reset" id="sim-reset">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Reset All</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL 1: INSPECT CHANGE / BREAKING SCHEMA DIFF MODAL -->
@@ -605,100 +736,12 @@
           </button>
         </div>
 
-        <div class="modal-body">
-          <div class="inspect-service-header">
-            <div class="service-chip-wrap">
-              <div class="service-icon-box bg-purple">
-                <i data-lucide="users"></i>
-              </div>
-              <div>
-                <h2 class="inspect-title">Customer Directory API</h2>
-                <div class="inspect-sub">
-                  <code>https://api.afterform.dev/users</code> &bull; <code>GET /users</code>
-                </div>
-              </div>
-            </div>
-            <div class="inspect-severity-tag">
-              <span class="pulse-orange-dot"></span>
-              <span>SEVERITY: BREAKING CONTRACT</span>
-            </div>
-          </div>
-
-          <!-- Difference comparison columns -->
-          <div class="diff-container">
-            <div class="diff-header-row">
-              <div class="diff-col-head">
-                <span class="diff-ver">OBSERVED BASELINE (v1.8.4)</span>
-                <span class="diff-status-tag tag-green">Passing Contracts</span>
-              </div>
-              <div class="diff-col-head">
-                <span class="diff-ver">LIVE CONTRACT DRIFT (v2.0.0-rc1)</span>
-                <span class="diff-status-tag tag-orange">Breaking Changes Detected</span>
-              </div>
-            </div>
-
-            <div class="diff-code-wrapper">
-              <div class="diff-pane baseline-pane">
-                <pre><code>{
-  "id": "usr_99812",
-  "name": "Sarah Connor",
-  "email": "sarah@cyberdyne.io",
-  <span class="diff-line-removed">- "billing_address": {
--   "street": "104 Sky Net Blvd",
--   "country": "US"
-- },</span>
-  "status": "active",
-  "created_at": 1726789000
-}</code></pre>
-              </div>
-              <div class="diff-pane live-pane">
-                <pre><code>{
-  "id": "usr_99812",
-  "name": "Sarah Connor",
-  "email": "sarah@cyberdyne.io",
-  <span class="diff-line-added">+ "tax_identifier": {
-+   "tin": "US-991204-B",
-+   "verified": true
-+ }, // MANDATORY FIELD</span>
-  <span class="diff-line-added">+ "user_tier": "enterprise", // NEW ENUM</span>
-  "status": "active",
-  "created_at": 1726789000
-}</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- Impacted Workflows Breakdown -->
-          <div class="impact-section">
-            <h4 class="impact-title">
-              <i data-lucide="git-fork"></i>
-              Potentially Affected Workflows (2 downstream pipelines)
-            </h4>
-            <div class="impact-list">
-              <div class="impact-card">
-                <div class="impact-card-head">
-                  <span class="impact-name">Checkout & Onboarding Pipeline</span>
-                  <span class="impact-badge-high">High Risk</span>
-                </div>
-                <p>Parser expects <code>billing_address</code> field. Will throw <code>TypeError: undefined</code> during customer initialization.</p>
-              </div>
-              <div class="impact-card">
-                <div class="impact-card-head">
-                  <span class="impact-name">User Profile Sync Daemon</span>
-                  <span class="impact-badge-med">Medium Risk</span>
-                </div>
-                <p>Missing <code>user_tier</code> mapping will result in default downgrade fallback.</p>
-              </div>
-            </div>
-          </div>
+        <div class="modal-body" id="inspect-modal-body">
+          <!-- Rendered dynamically by inspect.js -->
         </div>
 
-        <div class="modal-footer">
-          <button class="btn-secondary" id="btn-dismiss-inspect">Dismiss</button>
-          <button class="btn-primary-pill" id="btn-remediate-inspect">
-            <i data-lucide="check-circle-2"></i>
-            <span>Update TypeScript Contract & Regenerate SDK</span>
-          </button>
+        <div class="modal-footer" id="inspect-modal-footer">
+          <!-- Rendered dynamically by inspect.js -->
         </div>
       </div>
     </div>
@@ -831,6 +874,32 @@
             <span>Simulate Probe Ping</span>
           </button>
           <button class="btn-secondary" id="btn-drawer-close-action">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: PIPELINE SIMULATION -->
+    <div class="modal-backdrop hidden" id="modal-pipeline">
+      <div class="modal-dialog modal-dialog-large modal-pipeline-dialog">
+        <div class="modal-header">
+          <div class="modal-header-badge" id="pipeline-header-badge">
+            <i data-lucide="activity"></i>
+            <span id="pipeline-header-title">DEPENDENCY REPAIR PIPELINE</span>
+          </div>
+          <button class="modal-close-btn" id="modal-close-pipeline" aria-label="Close pipeline">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body pipeline-body">
+          <div class="pipeline-scenario-info" id="pipeline-scenario-info"></div>
+          <div class="pipeline-progress" id="pipeline-progress"></div>
+          <div class="pipeline-step-content" id="pipeline-step-content"></div>
+        </div>
+        <div class="modal-footer pipeline-footer">
+          <div class="pipeline-footer-status" id="pipeline-footer-status">
+            <span class="pipeline-elapsed" id="pipeline-elapsed">0.0s</span>
+            <span class="pipeline-stage-label" id="pipeline-stage-label">Initializing...</span>
+          </div>
         </div>
       </div>
     </div>

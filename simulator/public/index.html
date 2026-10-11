@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REBASE — Dependency Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-canvas: #090a0d;
+      --bg-card: #0f1117;
+      --bg-card-hover: #151821;
+      --border: #1e2130;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-lime: #d4f938;
+      --accent-orange: #fa4d1e;
+      --accent-red: #ef4444;
+      --accent-green: #22c55e;
+      --accent-blue: #3b82f6;
+      --accent-purple: #a855f7;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Syne', sans-serif;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent-lime);
+      letter-spacing: -0.5px;
+    }
+
+    .logo span {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 18px;
+      background: var(--accent-lime);
+      border-radius: 2px;
+    }
+
+    .mutation-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .mutation-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .mutation-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .mutation-card.active {
+      border-color: var(--accent-orange);
+      background: rgba(250, 77, 30, 0.04);
+    }
+
+    .mutation-info {
+      flex: 1;
+    }
+
+    .mutation-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .severity-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .severity-LOW { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+    .severity-MODERATE { background: rgba(212, 249, 56, 0.15); color: var(--accent-lime); }
+    .severity-CRITICAL { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+    .mutation-desc {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .mutation-target {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .mutation-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 24px;
+    }
+
+    .status-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      min-width: 72px;
+      text-align: center;
+    }
+
+    .status-baseline {
+      color: var(--accent-green);
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .status-mutated {
+      color: var(--accent-orange);
+      background: rgba(250, 77, 30, 0.1);
+    }
+
+    .btn-toggle {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-lime);
+      color: var(--accent-lime);
+    }
+
+    .btn-toggle.active {
+      background: rgba(250, 77, 30, 0.1);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+    }
+
+    .btn-toggle.active:hover {
+      background: rgba(250, 77, 30, 0.2);
+    }
+
+    .btn-reset {
+      padding: 10px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .endpoints-section {
+      margin-bottom: 40px;
+    }
+
+    .endpoint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .endpoint-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+    }
+
+    .endpoint-method {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .endpoint-path {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .endpoint-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .history-section {
+      margin-bottom: 40px;
+    }
+
+    .history-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-action {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .history-action.apply { background: rgba(250, 77, 30, 0.15); color: var(--accent-orange); }
+    .history-action.revert { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+    .history-action.reset { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+
+    .history-time { color: var(--text-muted); font-size: 11px; }
+    .history-mutation { color: var(--text-secondary); }
+
+    .history-empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .active-count {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .active-count strong {
+      color: var(--accent-orange);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); }
+    .toast.info { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">REBASE <span>Dependency Simulator</span></div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      Port 4000
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-title">Mutation Scenarios</div>
+    <div class="controls-bar">
+      <div class="active-count" id="active-count">0 active mutations</div>
+      <button class="btn-reset" id="btn-reset">Reset All</button>
+    </div>
+    <div class="mutation-grid" id="mutation-grid"></div>
+
+    <div class="endpoints-section">
+      <div class="section-title">Simulated Endpoints</div>
+      <div class="endpoint-grid">
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/api/users</div>
+          <div class="endpoint-desc">Customer Directory — user profiles</div>
+        </div>
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/api/products</div>
+          <div class="endpoint-desc">Product Catalog — inventory data</div>
+        </div>
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/api/orders</div>
+          <div class="endpoint-desc">Order Service — order records</div>
+        </div>
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/mcp/tools</div>
+          <div class="endpoint-desc">User Auth MCP — tool definitions</div>
+        </div>
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/webhook/events</div>
+          <div class="endpoint-desc">Stripe Webhooks — event schemas</div>
+        </div>
+        <div class="endpoint-card">
+          <div class="endpoint-method">GET</div>
+          <div class="endpoint-path">/schema/:service</div>
+          <div class="endpoint-desc">Schema introspection for any service</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <div class="section-title">Mutation History</div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty">No mutations applied yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const BASE = '';
+
+    async function fetchStatus() {
+      const res = await fetch(`${BASE}/control/status`);
+      return res.json();
+    }
+
+    async function toggleMutation(id) {
+      const res = await fetch(`${BASE}/control/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      showToast(
+        data.action === 'apply'
+          ? `Mutation applied: ${id}`
+          : `Mutation reverted: ${id}`,
+        data.action === 'apply' ? 'info' : 'success'
+      );
+      render();
+    }
+
+    async function resetAll() {
+      await fetch(`${BASE}/control/reset`, { method: 'POST' });
+      showToast('All mutations reset to baseline', 'success');
+      render();
+    }
+
+    async function fetchHistory() {
+      const res = await fetch(`${BASE}/control/history`);
+      return res.json();
+    }
+
+    function showToast(msg, type) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `toast ${type} visible`;
+      setTimeout(() => el.classList.remove('visible'), 3000);
+    }
+
+    async function render() {
+      const [statusData, historyData] = await Promise.all([fetchStatus(), fetchHistory()]);
+
+      const grid = document.getElementById('mutation-grid');
+      grid.innerHTML = statusData.mutations.map(m => `
+        <div class="mutation-card ${m.active ? 'active' : ''}">
+          <div class="mutation-info">
+            <div class="mutation-name">
+              ${m.name}
+              <span class="severity-badge severity-${m.severity}">${m.severity}</span>
+            </div>
+            <div class="mutation-desc">${m.description}</div>
+            <div class="mutation-target">Target: ${m.target} &bull; Type: ${m.type}</div>
+          </div>
+          <div class="mutation-actions">
+            <span class="status-label ${m.active ? 'status-mutated' : 'status-baseline'}">
+              ${m.active ? 'MUTATED' : 'BASELINE'}
+            </span>
+            <button class="btn-toggle ${m.active ? 'active' : ''}" onclick="toggleMutation('${m.id}')">
+              ${m.active ? 'Revert' : 'Apply'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      const count = statusData.activeMutations.length;
+      document.getElementById('active-count').innerHTML =
+        count === 0
+          ? '0 active mutations'
+          : `<strong>${count}</strong> active mutation${count > 1 ? 's' : ''}`;
+
+      const historyList = document.getElementById('history-list');
+      if (historyData.history.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">No mutations applied yet</div>';
+      } else {
+        historyList.innerHTML = historyData.history.slice().reverse().map(h => {
+          const time = new Date(h.timestamp).toLocaleTimeString();
+          return `
+            <div class="history-item">
+              <span class="history-action ${h.action}">${h.action}</span>
+              <span class="history-mutation">${h.mutation || 'all'}</span>
+              <span class="history-time">${time}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', resetAll);
+
+    render();
+  </script>
+</body>
+</html>
