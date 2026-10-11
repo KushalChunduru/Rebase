@@ -46,7 +46,11 @@ start('BACKEND', join(root, 'backend'), 'node', ['server.js'], '36');
 
 await new Promise(r => setTimeout(r, 2000));
 
-start('FRONTEND', root, 'npx', ['vite', '--host'], '33');
+start('DASHBOARD', root, 'npx', ['vite', '--host'], '33');
+
+await new Promise(r => setTimeout(r, 1000));
+
+start('STOREFRONT', join(root, 'storefront'), 'npx', ['vite', '--host'], '34');
 
 process.on('SIGINT', () => {
   console.log('\n  Shutting down all services...');

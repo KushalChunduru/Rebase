@@ -62,19 +62,80 @@ CRITICAL semantic changes → ALWAYS BLOCKED
 
 ## Tech Stack
 - Frontend: Vanilla JS + Vite (no framework migration)
-- Backend: Node.js (to be built)
+- Backend: Node.js + Express
 - Simulator: Separate Node.js app
+- Razorpay: Test Mode SDK integration (razorpay npm package)
 - Design: Dark obsidian (#090a0d), lime (#d4f938), orange (#fa4d1e), glassmorphism, JetBrains Mono, Syne
+
+## Razorpay Integration
+
+### Live Demo Flow
+1. Dashboard → Live APIs view → "Pay ₹5 Test" button
+2. Backend creates Razorpay order via `POST /api/payments/create-order`
+3. Frontend opens Razorpay Checkout (test mode)
+4. After payment, frontend verifies signature via `POST /api/payments/verify`
+5. Razorpay sends webhook to `POST /webhooks/razorpay` (via ngrok tunnel)
+6. Rebase captures baseline schema from webhook payload
+7. "Simulate Drift" button sends synthetic payload with `amount: number → string`
+8. Rebase detects structural drift via deterministic schema diff
+
+### Endpoints
+- `POST /api/payments/create-order` — creates Razorpay test order, returns orderId + keyId
+- `POST /api/payments/verify` — verifies checkout signature (order_id|payment_id HMAC)
+- `POST /webhooks/razorpay` — receives genuine Razorpay webhooks, validates signature against raw body
+- `POST /webhooks/simulate-drift` — sends synthetic payload to trigger type_changed detection
+- `DELETE /webhooks/simulate-drift` — resets synthetic test baseline
+
+### Webhook Signature Verification
+- Uses raw request body (captured via express.json verify callback)
+- Rejects missing signatures when webhook secret is configured
+- Deduplicates by payment/order entity ID + event name
+
+### Synthetic Drift Isolation
+- Genuine webhooks use baseline key `razorpay:{event}`
+- Synthetic test payloads use `razorpay-test:{event}`
+- Synthetic payloads never corrupt genuine baselines
+
+### Environment Variables (backend/.env)
+```
+RAZORPAY_KEY_ID=rzp_test_xxxx
+RAZORPAY_KEY_SECRET=xxxx
+RAZORPAY_WEBHOOK_SECRET=xxxx
+```
+
+### Webhook Setup
+1. Run `npx ngrok http 3000` to get HTTPS tunnel URL
+2. In Razorpay Dashboard → Settings → Webhooks → Add:
+   - URL: `https://xxxx.ngrok-free.app/webhooks/razorpay`
+   - Secret: same as RAZORPAY_WEBHOOK_SECRET in .env
+   - Events: payment.captured, order.paid, payment.failed, refund.processed
+3. Use test card `4111 1111 1111 1111` or UPI ID `success@razorpay`
 
 ## Current File Structure
 ```
 hackwave/
-  index.html          — Single-page dashboard (1045 lines, polished)
-  src/main.js         — All frontend logic (1440 lines)
-  src/style.css       — Full design system (4929 lines)
-  package.json        — Vite + lucide
-  simulator/          — (to be built) Dependency Simulator app
-  backend/            — (to be built) Rebase backend + engine
+  index.html                — Single-page dashboard
+  src/main.js               — Frontend logic (payment flow, drift simulation, WS handlers)
+  src/style.css             — Full design system
+  src/services/api-service.js — Backend API client (payments, drift simulation)
+  src/services/webhook-ws.js  — WebSocket client for real-time events
+  package.json              — Vite + lucide
+  scripts/start-all.js      — Starts simulator + backend + frontend
+  simulator/                — Dependency Simulator app
+  backend/
+    server.js               — Express server (raw body capture, CORS, routes)
+    src/config.js            — Environment config (Razorpay keys, pipeline thresholds)
+    src/routes/payments.js   — Razorpay order creation + signature verification
+    src/routes/webhooks.js   — Webhook receiver (signature validation, drift detection, simulation)
+    src/routes/pipeline.js   — Pipeline execution API
+    src/routes/dependencies.js — Dependency CRUD
+    src/store/index.js       — In-memory store (deps, baselines, observations, pipeline runs)
+    src/modules/pipeline.js  — 9-stage pipeline orchestrator
+    src/modules/sandbox/     — Adapter validation (compile, no-throw, field coverage, idempotency)
+    src/modules/safety/      — Safety gate (auto-apply / blocked / human review)
+    src/ws.js                — WebSocket broadcast
+    .env                     — Razorpay credentials (gitignored)
+    .env.example             — Template for required env vars
 ```
 
 ## Existing UI Components to PRESERVE

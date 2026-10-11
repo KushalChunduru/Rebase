@@ -19,6 +19,25 @@ router.post('/run/:dependencyId', async (req, res) => {
   if (!dep) return res.status(404).json({ error: 'Dependency not found' });
 
   const run = await runPipeline(req.params.dependencyId);
+
+  if (dep.type === 'webhook' && run.stageResults?.detect?.changed) {
+    const safety = run.stageResults?.safety;
+    store.setWebhookDriftAlert({
+      dependencyId: req.params.dependencyId,
+      dependencyName: dep.name,
+      driftCount: run.stageResults.detect.diffCount,
+      decision: safety?.decision || 'unknown',
+      risk: run.stageResults?.semantic?.risk || 'UNKNOWN',
+      runId: run.id
+    });
+    console.log(`[PIPELINE] Webhook drift alert ACTIVATED for ${dep.name}`);
+  } else if (dep.type === 'webhook' && run.stageResults?.detect && !run.stageResults.detect.changed) {
+    if (store.getWebhookDriftAlert()?.dependencyId === req.params.dependencyId) {
+      store.clearWebhookDriftAlert();
+      console.log(`[PIPELINE] Webhook drift alert CLEARED for ${dep.name}`);
+    }
+  }
+
   res.json(sanitizeRun(run));
 });
 

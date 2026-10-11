@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Italiana&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/style.css" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   </head>
   <body>
     <div id="app" class="dashboard-layout">
@@ -702,6 +703,38 @@
               <span class="demo-status-val" id="demo-rebase-status">Idle</span>
             </div>
           </div>
+
+          <!-- Storefront Link -->
+          <div class="dashboard-storefront-link">
+            <i data-lucide="external-link"></i>
+            <span>E-commerce storefront running at <a href="http://localhost:5174" target="_blank">localhost:5174</a> — make a test purchase, then watch drift detection here.</span>
+          </div>
+
+          <!-- Demo Action Bar -->
+          <div class="demo-action-bar">
+            <div class="demo-action-card">
+              <div class="demo-action-icon bg-orange"><i data-lucide="alert-triangle"></i></div>
+              <div class="demo-action-body">
+                <h4>Simulate Dependency Drift</h4>
+                <p>Activate the webhook-event-rename mutation on the simulator, then run the Rebase pipeline to detect the breaking change. When drift is active, incoming webhooks are <strong>quarantined</strong> — order fulfillment is blocked.</p>
+              </div>
+              <div class="demo-action-buttons">
+                <button class="btn-demo-action orange" id="btn-webhook-drift" title="Webhook Event Rename: payment_success → payment.completed">
+                  <i data-lucide="webhook"></i> Webhook Event Rename
+                </button>
+                <button class="btn-demo-action orange" id="btn-simulate-api-drift" title="API: name → display_name field rename">
+                  <i data-lucide="arrow-right-left"></i> API Field Rename
+                </button>
+                <button class="btn-demo-action lime" id="btn-clear-drift" title="Revert mutation and clear drift alert" style="display:none">
+                  <i data-lucide="rotate-ccw"></i> Clear Drift
+                </button>
+              </div>
+              <span class="demo-action-status" id="drift-status">Ready</span>
+            </div>
+          </div>
+
+          <!-- Drift Incident Panel (populated dynamically) -->
+          <div class="drift-incident-container hidden" id="drift-incident-container"></div>
 
           <!-- Webhook Event Cards -->
           <h3 class="live-section-title"><i data-lucide="webhook"></i> Monitored Webhook Events</h3>

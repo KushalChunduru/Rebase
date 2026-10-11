@@ -11,6 +11,7 @@ import { openInspectModal, closeInspectModal } from './components/inspect.js';
 import { openApiDrawer, closeApiDrawer, handleDrawerPing } from './components/drawer.js';
 import { renderCatalog, openBrowseModal, closeBrowseModal, openAddApiModal, closeAddApiModal } from './components/catalog.js';
 import { connectWebSocket, onWebSocketMessage, isConnected } from './services/webhook-ws.js';
+import { renderDriftIncidentPanel } from './components/drift-incident.js';
 
 // ============================================================
 // INITIALIZATION
@@ -68,49 +69,104 @@ function initWebhookStream() {
       showToast('WebSocket connected — listening for webhooks', 'success');
     }
 
-    if (data.type === 'webhook:received' && data.status === 'baseline_captured') {
-      showToast(`Baseline captured: ${data.event}`, 'success');
+    // Payment lifecycle events
+    if (data.type === 'payment:order-created') {
       store.addTelemetryEvent({
-        id: 'wh-' + Date.now(),
+        id: 'pay-order-' + Date.now(),
         time: new Date().toTimeString().slice(0, 8),
-        type: 'ok',
-        source: `Razorpay (${data.event})`,
-        message: `Webhook baseline captured — schema recorded`,
-        badge: 'BASELINE',
+        type: 'info',
+        source: 'Razorpay',
+        message: `Order created: ${data.orderId} — ₹${(data.amount / 100).toFixed(2)}`,
+        badge: 'ORDER',
         actionable: false,
         simulated: false
       });
     }
 
-    if (data.type === 'webhook:received' && data.status === 'schema_match') {
+    if (data.type === 'payment:verified') {
+      store.addTelemetryEvent({
+        id: 'pay-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'ok',
+        source: 'Razorpay Checkout',
+        message: `Payment ${data.paymentId} verified${data.driftActive ? ' — drift active, webhook will be quarantined' : ''}`,
+        badge: data.driftActive ? 'DRIFT' : 'PAYMENT',
+        actionable: data.driftActive,
+        simulated: false
+      });
+    }
+
+    if (data.type === 'payment:verification-failed') {
+      showToast('Payment signature verification failed on backend', 'error');
+    }
+
+    // Webhook baseline captured
+    if (data.type === 'webhook:received' && data.status === 'baseline_captured') {
+      const isSynthetic = data.synthetic === true;
+      showToast(`Baseline captured: ${data.event}${isSynthetic ? ' (synthetic)' : ''}`, 'success');
       store.addTelemetryEvent({
         id: 'wh-' + Date.now(),
         time: new Date().toTimeString().slice(0, 8),
         type: 'ok',
-        source: `Razorpay (${data.event})`,
+        source: isSynthetic ? `Synthetic (${data.event})` : `Razorpay (${data.event})`,
+        message: `Webhook baseline captured — schema recorded`,
+        badge: isSynthetic ? 'SYNTHETIC' : 'BASELINE',
+        actionable: false,
+        simulated: isSynthetic
+      });
+    }
+
+    // Webhook schema match
+    if (data.type === 'webhook:received' && data.status === 'schema_match') {
+      const isSynthetic = data.synthetic === true;
+      store.addTelemetryEvent({
+        id: 'wh-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'ok',
+        source: isSynthetic ? `Synthetic (${data.event})` : `Razorpay (${data.event})`,
         message: `Webhook received — schema matches baseline`,
         badge: 'OK',
         actionable: false,
-        simulated: false
+        simulated: isSynthetic
       });
+
+      if (!isSynthetic) {
+        // Update Razorpay webhook card status
+        const card = document.querySelector('[data-api="webhook-payment-captured"]');
+        if (card) {
+          const badge = card.querySelector('.dep-card-badge');
+          if (badge) { badge.className = 'dep-card-badge monitoring'; badge.innerHTML = '<span class="status-pulse-dot"></span> Schema OK'; }
+        }
+      }
     }
 
+    // Webhook drift detected
     if (data.type === 'webhook:drift') {
       const fieldCount = data.drift?.length || 0;
-      showToast(`DRIFT DETECTED on ${data.event} — ${fieldCount} field(s) changed!`, 'error');
+      const isSynthetic = data.synthetic === true;
+      showToast(`${isSynthetic ? 'SYNTHETIC ' : ''}DRIFT DETECTED on ${data.event} — ${fieldCount} field(s) changed!`, 'error');
       store.addTelemetryEvent({
         id: 'wh-drift-' + Date.now(),
         time: new Date().toTimeString().slice(0, 8),
         type: 'warn',
-        source: `Razorpay (${data.event})`,
-        message: `WEBHOOK DRIFT — ${fieldCount} schema change(s) detected`,
-        badge: 'DRIFT',
+        source: isSynthetic ? `Synthetic (${data.event})` : `Razorpay (${data.event})`,
+        message: `${isSynthetic ? 'SYNTHETIC ' : ''}WEBHOOK DRIFT — ${fieldCount} schema change(s) detected`,
+        badge: isSynthetic ? 'SYNTHETIC' : 'DRIFT',
         actionable: true,
-        simulated: false
+        simulated: isSynthetic
       });
 
-      // Auto-trigger pipeline on drift detection
-      if (!isPipelineActive() && !isPipelineModalOpen()) {
+      // Update drift simulation status
+      if (isSynthetic) {
+        const driftStatus = document.getElementById('drift-status');
+        if (driftStatus) {
+          driftStatus.textContent = `Drift detected — ${fieldCount} field(s)`;
+          driftStatus.className = 'demo-action-status success';
+        }
+      }
+
+      // Auto-trigger pipeline on drift detection (non-synthetic only)
+      if (!isSynthetic && !isPipelineActive() && !isPipelineModalOpen()) {
         setTimeout(() => {
           startPipeline('webhook-rename', {
             useBackend: false,
@@ -120,11 +176,35 @@ function initWebhookStream() {
         }, 1500);
       }
     }
+
+    // Webhook quarantined — drift enforcement blocked fulfillment
+    if (data.type === 'webhook:quarantined') {
+      showToast(`WEBHOOK QUARANTINED: ${data.event} — drift enforcement active, order NOT fulfilled`, 'error');
+      store.addTelemetryEvent({
+        id: 'wh-quarantine-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'error',
+        source: `Razorpay (${data.event})`,
+        message: `QUARANTINED — webhook drift active, order ${data.orderId || 'unknown'} NOT fulfilled`,
+        badge: 'BLOCKED',
+        actionable: true,
+        simulated: false
+      });
+
+      // Update webhook card status on dashboard
+      const card = document.querySelector('[data-api="webhook-payment-captured"]');
+      if (card) {
+        const badge = card.querySelector('.dep-card-badge');
+        if (badge) { badge.className = 'dep-card-badge review-required'; badge.innerHTML = '<span class="status-pulse-dot"></span> Quarantined'; }
+      }
+    }
   });
 }
 
 function addWebhookFeedItem(data) {
-  if (data.type !== 'webhook:received' && data.type !== 'webhook:drift') return;
+  if (data.type !== 'webhook:received' && data.type !== 'webhook:drift'
+    && data.type !== 'webhook:quarantined'
+    && data.type !== 'payment:order-created' && data.type !== 'payment:verified') return;
 
   const feed = document.getElementById('live-webhook-feed');
   if (!feed) return;
@@ -134,16 +214,35 @@ function addWebhookFeedItem(data) {
 
   const time = new Date().toTimeString().slice(0, 8);
   const isDrift = data.type === 'webhook:drift';
-  const statusClass = isDrift ? 'drift' : (data.status === 'baseline_captured' ? 'baseline' : 'match');
-  const badgeText = isDrift ? 'DRIFT' : (data.status === 'baseline_captured' ? 'BASELINE' : 'OK');
+  const isQuarantined = data.type === 'webhook:quarantined';
+  const isPayment = data.type === 'payment:order-created' || data.type === 'payment:verified';
+  const isSynthetic = data.synthetic === true;
 
-  let message = '';
-  if (isDrift) {
-    message = `Schema drift detected — ${data.drift.length} field(s) changed`;
-  } else if (data.status === 'baseline_captured') {
-    message = 'First event received — schema captured as baseline';
+  let statusClass, badgeText, message, eventName;
+
+  if (isQuarantined) {
+    statusClass = 'drift';
+    badgeText = 'BLOCKED';
+    eventName = data.event;
+    message = `QUARANTINED — webhook drift active, order ${data.orderId || ''} NOT fulfilled`;
+  } else if (isPayment) {
+    statusClass = 'match';
+    badgeText = data.type === 'payment:order-created' ? 'ORDER' : 'VERIFIED';
+    eventName = data.type === 'payment:order-created' ? 'order.created' : 'payment.verified';
+    message = data.type === 'payment:order-created'
+      ? `Order created — ₹${(data.amount / 100).toFixed(2)}`
+      : `Payment ${data.paymentId} verified`;
   } else {
-    message = 'Payload matches baseline schema';
+    statusClass = isDrift ? 'drift' : (data.status === 'baseline_captured' ? 'baseline' : 'match');
+    badgeText = isDrift ? (isSynthetic ? 'SYNTHETIC' : 'DRIFT') : (data.status === 'baseline_captured' ? 'BASELINE' : 'OK');
+    eventName = data.event;
+    if (isDrift) {
+      message = `${isSynthetic ? '[SYNTHETIC] ' : ''}Schema drift detected — ${data.drift.length} field(s) changed`;
+    } else if (data.status === 'baseline_captured') {
+      message = `${isSynthetic ? '[SYNTHETIC] ' : ''}First event received — schema captured as baseline`;
+    } else {
+      message = 'Payload matches baseline schema';
+    }
   }
 
   let driftFieldsHtml = '';
@@ -162,7 +261,7 @@ function addWebhookFeedItem(data) {
     <span class="webhook-feed-dot ${statusClass}"></span>
     <div class="webhook-feed-body">
       <div class="webhook-feed-header">
-        <span class="webhook-feed-event">${data.event}</span>
+        <span class="webhook-feed-event">${eventName}</span>
         <span class="webhook-feed-badge ${statusClass}">${badgeText}</span>
       </div>
       <div class="webhook-feed-message">${message}</div>
@@ -598,6 +697,23 @@ function attachEventListeners() {
     });
   }
 
+  // Webhook Event Rename drift button — uses real simulator mutation + pipeline
+  const btnWebhookDrift = document.getElementById('btn-webhook-drift');
+  if (btnWebhookDrift) {
+    btnWebhookDrift.addEventListener('click', () => triggerWebhookEventRenameDrift());
+  }
+
+  const btnSimulateApiDrift = document.getElementById('btn-simulate-api-drift');
+  if (btnSimulateApiDrift) {
+    btnSimulateApiDrift.addEventListener('click', () => triggerApiDriftSimulation());
+  }
+
+  // Clear Drift button — reverts mutation and clears alert
+  const btnClearDrift = document.getElementById('btn-clear-drift');
+  if (btnClearDrift) {
+    btnClearDrift.addEventListener('click', () => clearWebhookDrift());
+  }
+
   // Pipeline modal close
   const pipelineCloseBtn = document.getElementById('modal-close-pipeline');
   if (pipelineCloseBtn) pipelineCloseBtn.addEventListener('click', abortPipeline);
@@ -704,6 +820,240 @@ function handleMockPipelineComplete(scenario, scenarioId) {
     });
     showToast(`${scenario.title.replace(' Detected', '')} — auto-fix BLOCKED for safety`, 'info');
   }
+}
+
+// ============================================================
+// DRIFT SIMULATION — Webhook Event Rename (real simulator mutation + pipeline)
+// ============================================================
+let driftSimRunning = false;
+
+async function triggerWebhookEventRenameDrift() {
+  if (driftSimRunning) return;
+  driftSimRunning = true;
+
+  const btn = document.getElementById('btn-webhook-drift');
+  const btn2 = document.getElementById('btn-simulate-api-drift');
+  const btnClear = document.getElementById('btn-clear-drift');
+  const statusEl = document.getElementById('drift-status');
+  const container = document.getElementById('drift-incident-container');
+
+  if (btn) btn.disabled = true;
+  if (btn2) btn2.disabled = true;
+  if (statusEl) { statusEl.textContent = 'Activating webhook mutation...'; statusEl.className = 'demo-action-status pending'; }
+  if (container) { container.classList.add('hidden'); container.innerHTML = ''; }
+
+  try {
+    // Step 1: Ensure clean baseline — revert any active mutation first
+    try {
+      await fetch('http://localhost:4000/control/mutate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 'webhook-event-rename', action: 'revert' })
+      });
+    } catch {}
+    try { await apiService.runPipeline('stripe-webhooks'); } catch {}
+
+    // Step 2: Activate mutation (payment_success → payment.completed, payment_id → transaction_id)
+    if (statusEl) statusEl.textContent = 'Applying webhook-event-rename mutation...';
+    await apiService.simulatorApplyMutation('webhook-event-rename');
+
+    // Step 3: Run full pipeline — detects drift and sets enforcement alert
+    if (statusEl) statusEl.textContent = 'Running Rebase pipeline...';
+    const run = await apiService.runPipeline('stripe-webhooks');
+
+    const detect = run.stageResults?.detect;
+    const safety = run.stageResults?.safety;
+
+    if (detect?.changed) {
+      const decLabel = safety?.decision === 'auto-apply' ? 'Auto-applied' : safety?.decision === 'blocked' ? 'Blocked' : 'Review required';
+      if (statusEl) { statusEl.textContent = `Drift active — webhooks will be quarantined`; statusEl.className = 'demo-action-status success'; }
+      if (btnClear) btnClear.style.display = '';
+
+      store.addTelemetryEvent({
+        id: 'wh-drift-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'warn',
+        source: 'Stripe Webhooks',
+        message: `Webhook event rename detected — ${detect.diffCount} diff(s). Webhook enforcement ACTIVE.`,
+        badge: 'DRIFT',
+        actionable: true,
+        simulated: false
+      });
+
+      showToast('Webhook drift ACTIVE — any incoming webhook will be quarantined until cleared', 'error');
+
+      if (container) {
+        renderDriftIncidentPanel(container, {
+          driftResult: {
+            drift: [
+              { field: 'event', change: 'type_changed', was: 'payment_success', now: 'payment.completed' },
+              { field: 'payload.payment_id', change: 'removed', was: 'string', now: null },
+              { field: 'payload.transaction_id', change: 'added', was: null, now: 'string' }
+            ],
+            label: `Webhook event rename: payment_success → payment.completed (${detect.diffCount} diffs)`,
+            baselineSchema: null,
+            currentSchema: null
+          },
+          pipelineRun: run,
+          dependency: { name: 'Stripe Webhooks', id: 'stripe-webhooks' }
+        });
+      }
+    } else {
+      if (statusEl) { statusEl.textContent = 'No drift detected'; statusEl.className = 'demo-action-status'; }
+      showToast('Pipeline ran but no drift detected — baseline may already match', 'info');
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'demo-action-status error'; }
+    showToast(`Webhook drift simulation failed: ${err.message}`, 'error');
+  }
+
+  if (btn) btn.disabled = false;
+  if (btn2) btn2.disabled = false;
+  driftSimRunning = false;
+}
+
+async function clearWebhookDrift() {
+  const statusEl = document.getElementById('drift-status');
+  const btnClear = document.getElementById('btn-clear-drift');
+  const container = document.getElementById('drift-incident-container');
+
+  if (statusEl) { statusEl.textContent = 'Reverting mutation...'; statusEl.className = 'demo-action-status pending'; }
+
+  try {
+    // Revert mutation on simulator
+    await fetch('http://localhost:4000/control/mutate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'webhook-event-rename', action: 'revert' })
+    });
+    // Re-run pipeline to clear drift alert
+    await apiService.runPipeline('stripe-webhooks');
+
+    if (statusEl) { statusEl.textContent = 'Drift cleared — normal processing resumed'; statusEl.className = 'demo-action-status success'; }
+    if (btnClear) btnClear.style.display = 'none';
+    if (container) { container.classList.add('hidden'); container.innerHTML = ''; }
+    showToast('Webhook drift cleared — payment webhooks will be processed normally', 'success');
+
+    store.addTelemetryEvent({
+      id: 'drift-clear-' + Date.now(),
+      time: new Date().toTimeString().slice(0, 8),
+      type: 'ok',
+      source: 'Stripe Webhooks',
+      message: 'Webhook drift CLEARED — normal webhook processing resumed',
+      badge: 'CLEARED',
+      actionable: false,
+      simulated: false
+    });
+
+    setTimeout(() => {
+      if (statusEl) { statusEl.textContent = 'Ready'; statusEl.className = 'demo-action-status'; }
+    }, 3000);
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'demo-action-status error'; }
+    showToast(`Clear drift failed: ${err.message}`, 'error');
+  }
+}
+
+// ============================================================
+// DRIFT SIMULATION — API Field Rename (name → display_name)
+// ============================================================
+async function triggerApiDriftSimulation() {
+  if (driftSimRunning) return;
+  driftSimRunning = true;
+
+  const btn = document.getElementById('btn-simulate-api-drift');
+  const btn2 = document.getElementById('btn-webhook-drift');
+  const statusEl = document.getElementById('drift-status');
+  const container = document.getElementById('drift-incident-container');
+
+  if (btn) btn.disabled = true;
+  if (btn2) btn2.disabled = true;
+  if (statusEl) { statusEl.textContent = 'Activating mutation...'; statusEl.className = 'demo-action-status pending'; }
+  if (container) { container.classList.add('hidden'); container.innerHTML = ''; }
+
+  try {
+    // Step 1: Ensure baseline exists by running pipeline first (will halt at detect if no changes)
+    if (statusEl) statusEl.textContent = 'Capturing baseline...';
+    try { await apiService.simulatorApplyMutation('api-field-rename'); } catch {}
+    try {
+      // Revert first to ensure clean baseline
+      await fetch('http://localhost:4000/control/mutate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 'api-field-rename', action: 'revert' })
+      });
+    } catch {}
+    // Run pipeline to capture/refresh baseline with original data
+    try { await apiService.runPipeline('customer-directory'); } catch {}
+
+    // Step 2: Activate mutation (name → display_name)
+    if (statusEl) statusEl.textContent = 'Applying mutation...';
+    await apiService.simulatorApplyMutation('api-field-rename');
+
+    // Step 3: Run the full pipeline — will detect drift
+    if (statusEl) statusEl.textContent = 'Running pipeline...';
+    const run = await apiService.runPipeline('customer-directory');
+
+    // Step 4: Revert mutation for re-demo
+    try {
+      await fetch('http://localhost:4000/control/mutate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 'api-field-rename', action: 'revert' })
+      });
+    } catch {}
+
+    const detect = run.stageResults?.detect;
+    const safety = run.stageResults?.safety;
+
+    if (detect?.changed) {
+      const decLabel = safety?.decision === 'auto-apply' ? 'Auto-applied' : safety?.decision === 'blocked' ? 'Blocked' : 'Review required';
+      if (statusEl) { statusEl.textContent = `${decLabel} — see below`; statusEl.className = 'demo-action-status success'; }
+
+      store.addTelemetryEvent({
+        id: 'api-drift-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: safety?.decision === 'auto-apply' ? 'ok' : 'warn',
+        source: 'Customer Directory',
+        message: `API field rename: name → display_name — ${decLabel}`,
+        badge: safety?.decision === 'auto-apply' ? 'AUTO-FIX' : 'REVIEW',
+        actionable: safety?.decision !== 'auto-apply',
+        simulated: true
+      });
+
+      if (container) {
+        renderDriftIncidentPanel(container, {
+          driftResult: {
+            drift: (detect.summary || '').includes('removed') ? [
+              { field: 'name', change: 'removed', was: 'string', now: null },
+              { field: 'display_name', change: 'added', was: null, now: 'string' }
+            ] : [],
+            label: `API field rename: name → display_name (${detect.diffCount} diffs)`,
+            baselineSchema: null,
+            currentSchema: null
+          },
+          pipelineRun: run,
+          dependency: { name: 'Customer Directory API', id: 'customer-directory' }
+        });
+      }
+
+      // Refresh deps status
+      try {
+        const deps = await apiService.getDependencies();
+        store.loadFromBackend(deps);
+      } catch {}
+    } else {
+      if (statusEl) { statusEl.textContent = 'No drift detected'; statusEl.className = 'demo-action-status'; }
+      showToast('Pipeline ran but no changes detected — baseline may already match', 'info');
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'demo-action-status error'; }
+    showToast(`API drift simulation failed: ${err.message}`, 'error');
+  }
+
+  if (btn) btn.disabled = false;
+  if (btn2) btn2.disabled = false;
+  driftSimRunning = false;
 }
 
 // ============================================================

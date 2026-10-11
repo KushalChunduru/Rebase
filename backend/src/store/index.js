@@ -2,6 +2,8 @@ const dependencies = new Map();
 const baselines = new Map();
 const observations = [];
 const pipelineRuns = [];
+const orders = new Map();
+let webhookDriftAlert = null;
 
 const seed = [
   {
@@ -132,6 +134,10 @@ export const store = {
     return baselines.get(dependencyId) || null;
   },
 
+  removeBaseline(dependencyId) {
+    return baselines.delete(dependencyId);
+  },
+
   getAllBaselines() {
     return [...baselines.values()];
   },
@@ -170,5 +176,39 @@ export const store = {
     if (!run) return null;
     Object.assign(run, updates);
     return run;
+  },
+
+  createOrder(orderId, data) {
+    const order = { orderId, status: 'created', createdAt: new Date().toISOString(), ...data };
+    orders.set(orderId, order);
+    return order;
+  },
+
+  getOrder(orderId) {
+    return orders.get(orderId) || null;
+  },
+
+  updateOrder(orderId, updates) {
+    const order = orders.get(orderId);
+    if (!order) return null;
+    Object.assign(order, updates, { updatedAt: new Date().toISOString() });
+    return order;
+  },
+
+  getOrders() {
+    return [...orders.values()];
+  },
+
+  setWebhookDriftAlert(alert) {
+    webhookDriftAlert = { ...alert, activatedAt: new Date().toISOString() };
+    return webhookDriftAlert;
+  },
+
+  getWebhookDriftAlert() {
+    return webhookDriftAlert;
+  },
+
+  clearWebhookDriftAlert() {
+    webhookDriftAlert = null;
   }
 };

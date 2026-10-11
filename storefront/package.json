@@ -1,0 +1,16 @@
+{
+  "name": "rebase-storefront",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
+  },
+  "dependencies": {
+    "lucide": "^1.55.0"
+  }
+}

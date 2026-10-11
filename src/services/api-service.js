@@ -74,5 +74,37 @@ export const apiService = {
 
   async simulatorStatus() {
     return request(`${SIMULATOR_URL}/control/status`);
+  },
+
+  // Razorpay payments
+  async createOrder(amount = 500, currency = 'INR') {
+    return request(`${BACKEND_URL}/api/payments/create-order`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, currency })
+    });
+  },
+
+  async verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature) {
+    return request(`${BACKEND_URL}/api/payments/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ razorpay_order_id, razorpay_payment_id, razorpay_signature })
+    });
+  },
+
+  // Drift simulation
+  async simulateDrift() {
+    return request(`${BACKEND_URL}/webhooks/simulate-drift`, { method: 'POST' });
+  },
+
+  async resetDriftSimulation() {
+    return request(`${BACKEND_URL}/webhooks/simulate-drift`, { method: 'DELETE' });
+  },
+
+  async getDriftStatus() {
+    return request(`${BACKEND_URL}/api/payments/drift-status`);
+  },
+
+  async getOrderStatus(orderId) {
+    return request(`${BACKEND_URL}/api/payments/orders/${orderId}`);
   }
 };
