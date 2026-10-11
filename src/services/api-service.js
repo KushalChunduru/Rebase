@@ -106,5 +106,35 @@ export const apiService = {
 
   async getOrderStatus(orderId) {
     return request(`${BACKEND_URL}/api/payments/orders/${orderId}`);
+  },
+
+  async getMcpTools() {
+    return request(`${SIMULATOR_URL}/mcp/tools`);
+  },
+
+  async updateMcpTool(toolName, description) {
+    return request(`${SIMULATOR_URL}/mcp/tools/${toolName}`, {
+      method: 'PUT',
+      body: JSON.stringify({ description })
+    });
+  },
+
+  async restoreMcpTool(toolName) {
+    return request(`${SIMULATOR_URL}/mcp/tools/${toolName}/edit`, { method: 'DELETE' });
+  },
+
+  async restoreAllMcpTools() {
+    return request(`${SIMULATOR_URL}/mcp/tools/restore-all`, { method: 'POST' });
+  },
+
+  async getMcpEdits() {
+    return request(`${SIMULATOR_URL}/mcp/edits`);
+  },
+
+  async executeMcpTool(toolName, params, dependencyId) {
+    return request(`${BACKEND_URL}/api/pipeline/mcp/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ toolName, params, dependencyId })
+    });
   }
 };

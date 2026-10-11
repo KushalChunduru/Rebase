@@ -58,6 +58,7 @@ const baseline = {
 
 const activeMutations = new Set();
 const history = [];
+const mcpEdits = new Map();
 
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -92,10 +93,39 @@ export function revertMutation(id) {
 export function resetAll() {
   const count = activeMutations.size;
   activeMutations.clear();
+  mcpEdits.clear();
   history.push({ action: 'reset', timestamp: new Date().toISOString() });
   return { cleared: count };
 }
 
 export function getHistory() {
   return [...history];
+}
+
+export function setMcpToolEdit(toolName, description) {
+  mcpEdits.set(toolName, description);
+  history.push({ action: 'mcp-edit', tool: toolName, description, timestamp: new Date().toISOString() });
+}
+
+export function clearMcpToolEdit(toolName) {
+  mcpEdits.delete(toolName);
+  history.push({ action: 'mcp-edit-clear', tool: toolName, timestamp: new Date().toISOString() });
+}
+
+export function clearAllMcpEdits() {
+  mcpEdits.clear();
+}
+
+export function getMcpEdits() {
+  return Object.fromEntries(mcpEdits);
+}
+
+export function applyMcpEdits(tools) {
+  if (mcpEdits.size === 0) return tools;
+  return tools.map(tool => {
+    if (mcpEdits.has(tool.tool)) {
+      return { ...tool, description: mcpEdits.get(tool.tool) };
+    }
+    return tool;
+  });
 }

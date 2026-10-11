@@ -12,47 +12,67 @@
 </head>
 <body>
 
+  <!-- Header -->
   <header class="store-header">
     <div class="store-header-inner">
-      <div class="store-logo">
-        <span class="store-logo-mark">R</span>
-        <span class="store-logo-text">Rebase Store</span>
+      <div class="store-header-left">
+        <div class="store-logo">
+          <span class="store-logo-mark">R</span>
+          <span class="store-logo-text">Rebase</span>
+          <span class="store-logo-divider"></span>
+          <span class="store-logo-label">Store</span>
+        </div>
       </div>
       <div class="store-header-right">
+        <span class="store-test-badge">TEST MODE</span>
         <span class="store-badge" id="store-connection-badge">Connecting...</span>
+        <a href="http://localhost:5173" target="_blank" class="store-header-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          Dashboard
+        </a>
       </div>
     </div>
   </header>
 
   <main class="store-main">
+
+    <!-- Hero -->
     <section class="store-hero">
-      <span class="store-hero-tag">RAZORPAY TEST MODE</span>
-      <h1 class="store-hero-title">Shop with confidence.</h1>
-      <p class="store-hero-sub">This storefront is monitored by <strong>Rebase</strong> — dependency drift is detected and blocked in real-time.</p>
+      <span class="store-hero-tag">REBASE-PROTECTED CHECKOUT</span>
+      <h1 class="store-hero-title">Premium sound.<br><span class="store-hero-accent">Protected checkout.</span></h1>
+      <p class="store-hero-sub">Every payment webhook is monitored by Rebase in real-time. If a dependency drifts, fulfillment is blocked before damage is done.</p>
     </section>
 
-    <section class="store-product-grid">
+    <!-- Product Card -->
+    <section class="store-product-section">
       <div class="store-product-card">
         <div class="store-product-image">
-          <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+          <div class="store-product-glow"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+          </svg>
+          <span class="store-product-badge-featured">FEATURED</span>
         </div>
         <div class="store-product-body">
-          <span class="store-product-tag">FEATURED</span>
           <h2 class="store-product-name">Rebase Pro Headphones</h2>
           <p class="store-product-desc">Premium wireless headphones with active noise cancellation. Perfect for focused engineering sessions.</p>
           <div class="store-product-specs">
             <span>Bluetooth 5.3</span>
             <span>40h Battery</span>
+            <span>ANC</span>
             <span>1yr Warranty</span>
           </div>
-          <div class="store-price-row">
-            <span class="store-price">&#8377;5.00</span>
-            <span class="store-price-mode">Test Mode</span>
+          <div class="store-product-bottom">
+            <div class="store-price-block">
+              <span class="store-price">&#8377;5<span class="store-price-decimal">.00</span></span>
+              <span class="store-price-mode">Razorpay Test Mode</span>
+            </div>
+            <button class="store-buy-btn" id="btn-buy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+              Buy Now
+            </button>
           </div>
-          <button class="store-buy-btn" id="btn-buy">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            Buy Now
-          </button>
           <span class="store-status" id="store-status">Ready to purchase</span>
         </div>
       </div>
@@ -62,7 +82,7 @@
     <section class="store-order-section hidden" id="order-panel">
       <div class="store-order-card">
         <div class="store-order-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
           <span id="order-title">Order Placed</span>
         </div>
 
@@ -87,7 +107,7 @@
 
         <div class="store-order-details" id="order-details"></div>
 
-        <!-- Quarantine banner (shown when drift blocks fulfillment) -->
+        <!-- Quarantine banner -->
         <div class="store-quarantine-banner hidden" id="quarantine-banner">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m4.243 4.243 15.514 15.514"/></svg>
           <div>
@@ -98,12 +118,12 @@
       </div>
     </section>
 
-    <!-- Rebase protection banner -->
+    <!-- Rebase protection footer -->
     <section class="store-rebase-banner">
       <div class="store-rebase-inner">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
         <span>Protected by <strong>Rebase</strong> — Autonomous Dependency Resilience Engine</span>
-        <a href="http://localhost:5173" target="_blank" class="store-rebase-link">Open Dashboard</a>
+        <a href="http://localhost:5173" target="_blank" class="store-rebase-link">Open Dashboard &rarr;</a>
       </div>
     </section>
   </main>

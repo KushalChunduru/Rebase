@@ -614,65 +614,66 @@
           </div>
         </div>
 
-        <!-- ========== VIEW: MCP ========== -->
+        <!-- ========== VIEW: MCP Contract Lab ========== -->
         <div id="view-mcp" class="view-container hidden">
           <div class="view-page-header">
             <div>
-              <h2 class="view-page-title">MCP Servers</h2>
-              <p class="view-page-sub">Monitor Model Context Protocol tool contracts, parameter schemas, and semantic behaviour.</p>
+              <h2 class="view-page-title">MCP Contract Lab</h2>
+              <p class="view-page-sub">Edit MCP tool contracts live — Rebase detects semantic meaning changes even when schemas are unchanged.</p>
             </div>
-            <span class="view-header-tag live-tag"><span class="status-pulse-dot"></span> 3 LIVE CONNECTIONS</span>
+            <span class="view-header-tag live-tag"><span class="status-pulse-dot"></span> LIVE CONTRACT</span>
           </div>
-          <div class="dep-cards-grid">
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-purple"><i data-lucide="shield"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
-              </div>
-              <h3 class="dep-card-name">User Auth MCP</h3>
-              <p class="dep-card-desc">Authentication & user management tools</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">5 tools</span>
-                <span class="dep-meta-pill">SSE transport</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Heartbeat: 4s ago</span>
-                <span>get_user, delete_user, update_user...</span>
-              </div>
+
+          <!-- MCP Lab Status Bar -->
+          <div class="live-demo-status-bar">
+            <div class="demo-status-item">
+              <span class="demo-status-dot green"></span>
+              <span class="demo-status-label">MCP Endpoint</span>
+              <span class="demo-status-val">/mcp/tools</span>
             </div>
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-emerald"><i data-lucide="database"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
-              </div>
-              <h3 class="dep-card-name">Data Pipeline MCP</h3>
-              <p class="dep-card-desc">ETL orchestration & data sync tools</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">8 tools</span>
-                <span class="dep-meta-pill">stdio transport</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Heartbeat: 1s ago</span>
-                <span>sync_table, run_pipeline, query_data...</span>
-              </div>
+            <div class="demo-status-item">
+              <span class="demo-status-dot green"></span>
+              <span class="demo-status-label">Service</span>
+              <span class="demo-status-val">user-auth-mcp</span>
             </div>
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-amber"><i data-lucide="bell"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Connected</span>
-              </div>
-              <h3 class="dep-card-name">Notification MCP</h3>
-              <p class="dep-card-desc">Push notification & alerting tools</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">3 tools</span>
-                <span class="dep-meta-pill">SSE transport</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Heartbeat: 2s ago</span>
-                <span>send_push, send_email, send_sms</span>
-              </div>
+            <div class="demo-status-item">
+              <span class="demo-status-dot" id="mcp-baseline-dot"></span>
+              <span class="demo-status-label">Baseline</span>
+              <span class="demo-status-val" id="mcp-baseline-status">Not captured</span>
             </div>
           </div>
+
+          <!-- MCP Tool Cards -->
+          <h3 class="live-section-title"><i data-lucide="wrench"></i> Live MCP Tool Contract</h3>
+          <div id="mcp-tools-container" class="mcp-tools-container">
+            <div class="mcp-tools-loading">Loading MCP tools...</div>
+          </div>
+
+          <!-- MCP Lab Controls -->
+          <div class="mcp-lab-controls">
+            <button class="btn-demo-action lime" id="btn-mcp-capture-baseline">
+              <i data-lucide="bookmark"></i> Capture Baseline
+            </button>
+            <button class="btn-demo-action orange" id="btn-mcp-run-analysis" disabled>
+              <i data-lucide="scan-search"></i> Run Drift Analysis
+            </button>
+            <button class="btn-demo-action" id="btn-mcp-test-execute" disabled>
+              <i data-lucide="play"></i> Test Execute delete_user
+            </button>
+            <button class="btn-demo-action" id="btn-mcp-restore" style="display:none">
+              <i data-lucide="rotate-ccw"></i> Restore Baseline
+            </button>
+            <span class="demo-action-status" id="mcp-lab-status">Ready</span>
+          </div>
+
+          <!-- MCP Drift Results -->
+          <div class="mcp-drift-results hidden" id="mcp-drift-results"></div>
+
+          <!-- MCP Execution Result -->
+          <div class="mcp-execution-result hidden" id="mcp-execution-result"></div>
+
+          <!-- MCP Drift Incident Panel (populated dynamically) -->
+          <div class="drift-incident-container hidden" id="mcp-drift-incident-container"></div>
         </div>
 
         <!-- ========== VIEW: Live APIs (E-Commerce Demo) ========== -->

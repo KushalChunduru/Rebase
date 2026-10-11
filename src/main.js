@@ -177,6 +177,34 @@ function initWebhookStream() {
       }
     }
 
+    // MCP drift detected via WebSocket
+    if (data.type === 'mcp:drift-detected') {
+      store.addTelemetryEvent({
+        id: 'mcp-ws-drift-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: data.risk === 'CRITICAL' ? 'error' : 'warn',
+        source: data.dependencyName || 'MCP Server',
+        message: `MCP drift: ${data.risk} risk, semantic ${data.semanticCompat}%, decision: ${data.decision}`,
+        badge: data.decision === 'blocked' ? 'BLOCKED' : 'DRIFT',
+        actionable: true,
+        simulated: false
+      });
+    }
+
+    if (data.type === 'mcp:execution-blocked') {
+      showToast(`MCP tool ${data.toolName} execution BLOCKED — ${data.risk} risk`, 'error');
+      store.addTelemetryEvent({
+        id: 'mcp-ws-blocked-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'error',
+        source: 'User Auth MCP',
+        message: `${data.toolName} execution BLOCKED — semantic compat ${data.semanticCompat}%`,
+        badge: 'BLOCKED',
+        actionable: true,
+        simulated: false
+      });
+    }
+
     // Webhook quarantined — drift enforcement blocked fulfillment
     if (data.type === 'webhook:quarantined') {
       showToast(`WEBHOOK QUARANTINED: ${data.event} — drift enforcement active, order NOT fulfilled`, 'error');
@@ -1057,6 +1085,428 @@ async function triggerApiDriftSimulation() {
 }
 
 // ============================================================
+// MCP CONTRACT LAB
+// ============================================================
+let mcpBaselineDescriptions = {};
+let mcpCurrentTools = [];
+
+async function initMcpLab() {
+  await loadMcpTools();
+
+  document.getElementById('btn-mcp-capture-baseline')?.addEventListener('click', mcpCaptureBaseline);
+  document.getElementById('btn-mcp-run-analysis')?.addEventListener('click', mcpRunAnalysis);
+  document.getElementById('btn-mcp-test-execute')?.addEventListener('click', mcpTestExecute);
+  document.getElementById('btn-mcp-restore')?.addEventListener('click', mcpRestore);
+}
+
+async function loadMcpTools() {
+  const container = document.getElementById('mcp-tools-container');
+  if (!container) return;
+
+  try {
+    const data = await apiService.getMcpTools();
+    mcpCurrentTools = data.tools;
+    const editsData = await apiService.getMcpEdits();
+    const edits = editsData.edits || {};
+
+    container.innerHTML = '';
+    for (const tool of data.tools) {
+      const isEdited = !!edits[tool.tool];
+      const baselineDesc = mcpBaselineDescriptions[tool.tool];
+      const isChanged = baselineDesc && tool.description !== baselineDesc;
+      const card = document.createElement('div');
+      card.className = `mcp-tool-card${isChanged ? ' changed' : ''}`;
+      card.dataset.tool = tool.tool;
+
+      card.innerHTML = `
+        <div class="mcp-tool-header">
+          <div class="mcp-tool-name">
+            <code>${tool.tool}</code>
+            ${tool.tool === 'delete_user' ? '<span class="mcp-tool-badge modified" style="display:none" id="mcp-badge-' + tool.tool + '">MODIFIED</span>' : ''}
+          </div>
+          <div class="mcp-tool-badges">
+            <span class="mcp-tool-badge schema">SCHEMA UNCHANGED</span>
+          </div>
+        </div>
+        <div class="mcp-tool-desc-row">
+          <span class="mcp-tool-desc-label">DESCRIPTION</span>
+          <input type="text" class="mcp-tool-desc-input${isChanged ? ' changed' : ''}" value="${tool.description}" data-tool="${tool.tool}" data-original="${baselineDesc || tool.description}" />
+        </div>
+        <div class="mcp-tool-schema">
+          <span class="mcp-tool-desc-label">INPUT SCHEMA</span>
+          <pre>${JSON.stringify(tool.params, null, 2)}</pre>
+        </div>
+        <div class="mcp-tool-save-row" style="display:none" id="mcp-save-row-${tool.tool}">
+          <button class="mcp-tool-save-btn save" data-tool="${tool.tool}">Apply Change</button>
+          <button class="mcp-tool-save-btn revert" data-tool="${tool.tool}">Revert</button>
+        </div>
+      `;
+      container.appendChild(card);
+
+      if (isChanged) {
+        const badge = card.querySelector(`#mcp-badge-${tool.tool}`);
+        if (badge) badge.style.display = '';
+      }
+    }
+
+    container.querySelectorAll('.mcp-tool-desc-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const toolName = e.target.dataset.tool;
+        const original = e.target.dataset.original;
+        const saveRow = document.getElementById(`mcp-save-row-${toolName}`);
+        const card = e.target.closest('.mcp-tool-card');
+        if (e.target.value !== original) {
+          if (saveRow) saveRow.style.display = '';
+          e.target.classList.add('changed');
+          if (card) card.classList.add('editing');
+        } else {
+          if (saveRow) saveRow.style.display = 'none';
+          e.target.classList.remove('changed');
+          if (card) card.classList.remove('editing');
+        }
+      });
+    });
+
+    container.querySelectorAll('.mcp-tool-save-btn.save').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const toolName = btn.dataset.tool;
+        const input = container.querySelector(`input[data-tool="${toolName}"]`);
+        if (!input) return;
+        try {
+          await apiService.updateMcpTool(toolName, input.value);
+          input.dataset.original = input.value;
+          const saveRow = document.getElementById(`mcp-save-row-${toolName}`);
+          if (saveRow) saveRow.style.display = 'none';
+          const card = input.closest('.mcp-tool-card');
+          if (card) { card.classList.remove('editing'); card.classList.add('changed'); }
+          const badge = document.getElementById(`mcp-badge-${toolName}`);
+          if (badge) badge.style.display = '';
+          const restoreBtn = document.getElementById('btn-mcp-restore');
+          if (restoreBtn) restoreBtn.style.display = '';
+          const analyzeBtn = document.getElementById('btn-mcp-run-analysis');
+          if (analyzeBtn) analyzeBtn.disabled = false;
+          const execBtn = document.getElementById('btn-mcp-test-execute');
+          if (execBtn) execBtn.disabled = false;
+          showToast(`Saved: ${toolName} description updated on live MCP endpoint`, 'success');
+        } catch (err) {
+          showToast(`Save failed: ${err.message}`, 'error');
+        }
+      });
+    });
+
+    container.querySelectorAll('.mcp-tool-save-btn.revert').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const toolName = btn.dataset.tool;
+        const input = container.querySelector(`input[data-tool="${toolName}"]`);
+        const baseline = mcpBaselineDescriptions[toolName];
+        if (input && baseline) {
+          input.value = baseline;
+          input.classList.remove('changed');
+          input.dataset.original = baseline;
+        }
+        const saveRow = document.getElementById(`mcp-save-row-${toolName}`);
+        if (saveRow) saveRow.style.display = 'none';
+        const card = input?.closest('.mcp-tool-card');
+        if (card) { card.classList.remove('editing', 'changed'); }
+        const badge = document.getElementById(`mcp-badge-${toolName}`);
+        if (badge) badge.style.display = 'none';
+        try { await apiService.restoreMcpTool(toolName); } catch {}
+        showToast(`Reverted: ${toolName} restored to baseline`, 'info');
+      });
+    });
+
+    refreshIcons();
+  } catch (err) {
+    container.innerHTML = `<div class="mcp-tools-loading" style="color:var(--orange)">Failed to load MCP tools: ${err.message}</div>`;
+  }
+}
+
+async function mcpCaptureBaseline() {
+  const status = document.getElementById('mcp-lab-status');
+  const dot = document.getElementById('mcp-baseline-dot');
+  const bStatus = document.getElementById('mcp-baseline-status');
+  if (status) { status.textContent = 'Capturing baseline...'; status.className = 'demo-action-status pending'; }
+
+  try {
+    await apiService.restoreAllMcpTools();
+    const run = await apiService.runPipeline('user-auth-mcp');
+
+    const data = await apiService.getMcpTools();
+    mcpBaselineDescriptions = {};
+    for (const tool of data.tools) {
+      mcpBaselineDescriptions[tool.tool] = tool.description;
+    }
+
+    if (dot) dot.classList.add('green');
+    if (bStatus) bStatus.textContent = 'Captured';
+    if (status) { status.textContent = 'Baseline captured — now edit a description'; status.className = 'demo-action-status success'; }
+    showToast('MCP baseline captured — edit a tool description to introduce semantic drift', 'success');
+
+    await loadMcpTools();
+
+    const analyzeBtn = document.getElementById('btn-mcp-run-analysis');
+    if (analyzeBtn) analyzeBtn.disabled = false;
+    const execBtn = document.getElementById('btn-mcp-test-execute');
+    if (execBtn) execBtn.disabled = false;
+
+    store.addTelemetryEvent({
+      id: 'mcp-baseline-' + Date.now(),
+      time: new Date().toTimeString().slice(0, 8),
+      type: 'ok',
+      source: 'User Auth MCP',
+      message: 'MCP tool contract baseline captured',
+      badge: 'BASELINE',
+      actionable: false,
+      simulated: false
+    });
+  } catch (err) {
+    if (status) { status.textContent = 'Error'; status.className = 'demo-action-status error'; }
+    showToast(`Baseline capture failed: ${err.message}`, 'error');
+  }
+}
+
+async function mcpRunAnalysis() {
+  const status = document.getElementById('mcp-lab-status');
+  const resultsEl = document.getElementById('mcp-drift-results');
+  const incidentEl = document.getElementById('mcp-drift-incident-container');
+  if (status) { status.textContent = 'Running pipeline...'; status.className = 'demo-action-status pending'; }
+  if (resultsEl) { resultsEl.classList.add('hidden'); resultsEl.innerHTML = ''; }
+  if (incidentEl) { incidentEl.classList.add('hidden'); incidentEl.innerHTML = ''; }
+
+  try {
+    const verifyData = await apiService.getMcpTools();
+    const run = await apiService.runPipeline('user-auth-mcp');
+
+    const detect = run.stageResults?.detect;
+    const semantic = run.stageResults?.semantic;
+    const safety = run.stageResults?.safety;
+
+    if (!detect?.changed) {
+      if (status) { status.textContent = 'No drift detected'; status.className = 'demo-action-status'; }
+      showToast('Pipeline ran — no changes detected from baseline', 'info');
+      return;
+    }
+
+    const risk = semantic?.risk || 'UNKNOWN';
+    const riskLower = risk.toLowerCase();
+    const decision = safety?.decision || 'unknown';
+
+    const descDiffs = [];
+    for (const tool of verifyData.tools) {
+      const baseline = mcpBaselineDescriptions[tool.tool];
+      if (baseline && baseline !== tool.description) {
+        descDiffs.push({ tool: tool.tool, baseline, current: tool.description });
+      }
+    }
+
+    let decisionClass = 'review';
+    let decisionLabel = 'HUMAN REVIEW REQUIRED';
+    if (decision === 'blocked') { decisionClass = 'blocked'; decisionLabel = 'BLOCKED — AUTO-FIX REFUSED'; }
+    else if (decision === 'auto-apply') { decisionClass = 'auto-apply'; decisionLabel = 'AUTO-APPLIED'; }
+
+    if (resultsEl) {
+      resultsEl.className = `mcp-drift-results${risk === 'CRITICAL' ? ' critical' : ''}`;
+      resultsEl.innerHTML = `
+        <h4>
+          <i data-lucide="shield-alert"></i>
+          Semantic Drift Detected
+          <span class="risk-badge ${riskLower}">${risk}</span>
+        </h4>
+        ${descDiffs.length > 0 ? `
+        <div class="mcp-drift-desc-compare">
+          ${descDiffs.map(d => `
+            <div class="mcp-drift-desc-box baseline">
+              <span class="mcp-drift-desc-box-label">BASELINE — ${d.tool}</span>
+              <div class="mcp-drift-desc-box-text">"${d.baseline}"</div>
+            </div>
+            <div class="mcp-drift-desc-box current">
+              <span class="mcp-drift-desc-box-label">CURRENT — ${d.tool}</span>
+              <div class="mcp-drift-desc-box-text">"${d.current}"</div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+        <div class="mcp-drift-grid">
+          <div class="mcp-drift-cell">
+            <span class="mcp-drift-cell-label">SCHEMA COMPATIBILITY</span>
+            <span class="mcp-drift-cell-value safe">${semantic?.schemaCompat ?? '—'}%</span>
+          </div>
+          <div class="mcp-drift-cell">
+            <span class="mcp-drift-cell-label">SEMANTIC COMPATIBILITY</span>
+            <span class="mcp-drift-cell-value danger">${semantic?.semanticCompat ?? '—'}%</span>
+          </div>
+          <div class="mcp-drift-cell">
+            <span class="mcp-drift-cell-label">CONFIDENCE</span>
+            <span class="mcp-drift-cell-value">${semantic?.confidence ?? '—'}%</span>
+          </div>
+          <div class="mcp-drift-cell">
+            <span class="mcp-drift-cell-label">CHANGES DETECTED</span>
+            <span class="mcp-drift-cell-value">${detect.diffCount} diff(s)</span>
+          </div>
+        </div>
+        ${semantic?.classification ? `<div class="mcp-drift-classification">${semantic.classification}</div>` : ''}
+        <div class="mcp-drift-safety-decision ${decisionClass}">
+          <i data-lucide="${decision === 'blocked' ? 'shield-off' : decision === 'auto-apply' ? 'shield-check' : 'eye'}"></i>
+          ${decisionLabel}${safety?.reason ? ` — ${safety.reason}` : ''}
+        </div>
+      `;
+      resultsEl.classList.remove('hidden');
+    }
+
+    if (status) { status.textContent = `${risk} risk — ${decisionLabel}`; status.className = `demo-action-status ${decision === 'blocked' ? 'error' : 'success'}`; }
+
+    store.addTelemetryEvent({
+      id: 'mcp-drift-' + Date.now(),
+      time: new Date().toTimeString().slice(0, 8),
+      type: decision === 'blocked' ? 'error' : 'warn',
+      source: 'User Auth MCP',
+      message: `MCP semantic drift: ${risk} risk, ${decisionLabel}`,
+      badge: decision === 'blocked' ? 'BLOCKED' : 'DRIFT',
+      actionable: true,
+      simulated: false
+    });
+
+    if (incidentEl && descDiffs.length > 0) {
+      renderDriftIncidentPanel(incidentEl, {
+        driftResult: {
+          drift: descDiffs.map(d => ({
+            field: `${d.tool}.description`,
+            change: 'value-changed',
+            was: d.baseline,
+            now: d.current
+          })),
+          label: `MCP semantic shift: ${descDiffs.map(d => d.tool).join(', ')}`,
+          baselineSchema: null,
+          currentSchema: null
+        },
+        pipelineRun: run,
+        dependency: { name: 'User Auth MCP', id: 'user-auth-mcp' }
+      });
+    }
+
+    showToast(`MCP drift detected — ${risk} risk, ${decisionLabel}`, decision === 'blocked' ? 'error' : 'info');
+    refreshIcons();
+  } catch (err) {
+    if (status) { status.textContent = 'Error'; status.className = 'demo-action-status error'; }
+    showToast(`Analysis failed: ${err.message}`, 'error');
+  }
+}
+
+async function mcpTestExecute() {
+  const status = document.getElementById('mcp-lab-status');
+  const resultEl = document.getElementById('mcp-execution-result');
+  if (status) { status.textContent = 'Testing tool execution...'; status.className = 'demo-action-status pending'; }
+  if (resultEl) { resultEl.classList.add('hidden'); resultEl.innerHTML = ''; }
+
+  try {
+    const result = await apiService.executeMcpTool('delete_user', { user_id: 42 }, 'user-auth-mcp');
+    if (resultEl) {
+      resultEl.className = 'mcp-execution-result allowed';
+      resultEl.innerHTML = `
+        <h4><i data-lucide="check-circle"></i> Tool Execution Allowed</h4>
+        <div class="mcp-execution-detail">
+          <strong>Tool:</strong> delete_user<br>
+          <strong>Params:</strong> { user_id: 42 }<br>
+          <strong>Result:</strong> ${result.result?.message || 'Executed safely'}<br>
+          <strong>Safety:</strong> ${result.safetyDecision}
+        </div>
+      `;
+      resultEl.classList.remove('hidden');
+    }
+    if (status) { status.textContent = 'Execution allowed — no drift'; status.className = 'demo-action-status success'; }
+    showToast('Tool execution allowed — no dangerous drift detected', 'success');
+  } catch (err) {
+    let blocked = null;
+    try { blocked = JSON.parse(err.message.replace(/^HTTP \d+: ?/, '') || '{}'); } catch {}
+    if (err.message.includes('403') || blocked?.blocked) {
+      try {
+        const resp = await fetch('http://localhost:3000/api/pipeline/mcp/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ toolName: 'delete_user', params: { user_id: 42 }, dependencyId: 'user-auth-mcp' })
+        });
+        blocked = await resp.json();
+      } catch {}
+    }
+
+    if (blocked?.blocked) {
+      if (resultEl) {
+        resultEl.className = 'mcp-execution-result blocked';
+        resultEl.innerHTML = `
+          <h4><i data-lucide="shield-off"></i> Tool Execution BLOCKED</h4>
+          <div class="mcp-execution-detail">
+            <strong>Tool:</strong> delete_user<br>
+            <strong>Params:</strong> { user_id: 42 }<br>
+            <strong>Risk:</strong> <span style="color:var(--orange)">${blocked.risk}</span><br>
+            <strong>Semantic Compatibility:</strong> <span style="color:var(--orange)">${blocked.semanticCompat}%</span><br>
+            <strong>Safety Decision:</strong> <span style="color:var(--orange)">${blocked.safetyDecision?.toUpperCase()}</span><br>
+            <strong>Reason:</strong> ${blocked.reason}<br>
+            <strong>Pipeline Run:</strong> ${blocked.pipelineRunId || '—'}
+          </div>
+        `;
+        resultEl.classList.remove('hidden');
+      }
+      if (status) { status.textContent = 'BLOCKED — destructive tool execution refused'; status.className = 'demo-action-status error'; }
+
+      store.addTelemetryEvent({
+        id: 'mcp-exec-blocked-' + Date.now(),
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'error',
+        source: 'User Auth MCP',
+        message: `delete_user execution BLOCKED — ${blocked.risk} risk, semantic compat ${blocked.semanticCompat}%`,
+        badge: 'BLOCKED',
+        actionable: true,
+        simulated: false
+      });
+
+      showToast('BLOCKED: delete_user execution refused — semantic drift makes it destructive', 'error');
+    } else {
+      if (status) { status.textContent = 'Error'; status.className = 'demo-action-status error'; }
+      showToast(`Execution test failed: ${err.message}`, 'error');
+    }
+  }
+
+  refreshIcons();
+}
+
+async function mcpRestore() {
+  const status = document.getElementById('mcp-lab-status');
+  const resultsEl = document.getElementById('mcp-drift-results');
+  const execEl = document.getElementById('mcp-execution-result');
+  const incidentEl = document.getElementById('mcp-drift-incident-container');
+  const restoreBtn = document.getElementById('btn-mcp-restore');
+
+  if (status) { status.textContent = 'Restoring...'; status.className = 'demo-action-status pending'; }
+
+  try {
+    await apiService.restoreAllMcpTools();
+    await apiService.runPipeline('user-auth-mcp');
+
+    if (resultsEl) { resultsEl.classList.add('hidden'); resultsEl.innerHTML = ''; }
+    if (execEl) { execEl.classList.add('hidden'); execEl.innerHTML = ''; }
+    if (incidentEl) { incidentEl.classList.add('hidden'); incidentEl.innerHTML = ''; }
+    if (restoreBtn) restoreBtn.style.display = 'none';
+
+    await loadMcpTools();
+    if (status) { status.textContent = 'Baseline restored'; status.className = 'demo-action-status success'; }
+    showToast('MCP tools restored to baseline — all edits cleared', 'success');
+
+    store.addTelemetryEvent({
+      id: 'mcp-restore-' + Date.now(),
+      time: new Date().toTimeString().slice(0, 8),
+      type: 'ok',
+      source: 'User Auth MCP',
+      message: 'MCP contract restored to baseline',
+      badge: 'RESTORED',
+      actionable: false,
+      simulated: false
+    });
+  } catch (err) {
+    if (status) { status.textContent = 'Error'; status.className = 'demo-action-status error'; }
+    showToast(`Restore failed: ${err.message}`, 'error');
+  }
+}
+
+// ============================================================
 // VIEW SWITCHING
 // ============================================================
 function switchView(viewId) {
@@ -1074,6 +1524,8 @@ function switchView(viewId) {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', id !== targetId);
   });
+
+  if (viewId === 'mcp') initMcpLab();
 
   const breadcrumb = document.querySelector('.breadcrumb-part.current');
   if (breadcrumb) {

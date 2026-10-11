@@ -5316,6 +5316,174 @@ body {
 /* ============================================================
    DRIFT INCIDENT PANEL
    ============================================================ */
+/* ── MCP Contract Lab ── */
+.mcp-tools-container { margin-bottom: 20px; }
+.mcp-tools-loading { color: var(--text-dim); font-size: 0.8rem; padding: 20px; text-align: center; }
+
+.mcp-tool-card {
+  background: var(--surface-01);
+  border: 1px solid var(--border-01);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+.mcp-tool-card.editing { border-color: rgba(212,249,56,0.3); }
+.mcp-tool-card.changed { border-color: rgba(250,77,30,0.3); background: rgba(250,77,30,0.02); }
+
+.mcp-tool-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.mcp-tool-name {
+  font-family: var(--heading); font-size: 1rem; font-weight: 700; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.mcp-tool-name code {
+  font-size: 0.85rem; padding: 2px 8px; border-radius: 5px;
+  background: rgba(212,249,56,0.08); color: var(--lime); font-family: var(--mono);
+}
+.mcp-tool-badges { display: flex; gap: 6px; }
+.mcp-tool-badge {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 5px;
+}
+.mcp-tool-badge.schema { background: rgba(74,222,128,0.1); color: var(--green); }
+.mcp-tool-badge.modified { background: rgba(250,77,30,0.12); color: var(--orange); }
+
+.mcp-tool-desc-row { margin-bottom: 12px; }
+.mcp-tool-desc-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--text-dim);
+  letter-spacing: 1px; margin-bottom: 6px; display: block;
+}
+.mcp-tool-desc-input {
+  width: 100%; padding: 10px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border-01);
+  color: var(--text-primary); font-family: var(--mono); font-size: 0.82rem;
+  transition: border-color 0.2s;
+}
+.mcp-tool-desc-input:focus { outline: none; border-color: rgba(212,249,56,0.4); }
+.mcp-tool-desc-input.changed { border-color: rgba(250,77,30,0.4); color: var(--orange); }
+
+.mcp-tool-schema {
+  background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 14px;
+  border: 1px solid var(--border-01);
+}
+.mcp-tool-schema pre {
+  font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono);
+  white-space: pre-wrap; margin: 0;
+}
+
+.mcp-tool-save-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.mcp-tool-save-btn {
+  padding: 6px 16px; border-radius: 6px; border: none; font-size: 0.72rem;
+  font-weight: 600; cursor: pointer; font-family: var(--mono);
+  transition: all 0.2s;
+}
+.mcp-tool-save-btn.save { background: var(--lime); color: var(--bg); }
+.mcp-tool-save-btn.save:hover { background: #e0ff5c; }
+.mcp-tool-save-btn.revert { background: rgba(255,255,255,0.06); color: var(--text-dim); border: 1px solid var(--border-01); }
+.mcp-tool-save-btn.revert:hover { border-color: var(--orange); color: var(--orange); }
+
+.mcp-lab-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-bottom: 20px; padding: 16px; border-radius: 12px;
+  background: var(--surface-01); border: 1px solid var(--border-01);
+}
+
+.mcp-drift-results {
+  background: var(--surface-01); border: 1px solid var(--border-01);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 20px;
+}
+.mcp-drift-results.critical { border-color: rgba(250,77,30,0.3); }
+.mcp-drift-results h4 {
+  font-family: var(--heading); font-size: 0.95rem; font-weight: 700;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.mcp-drift-results h4 .risk-badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;
+  padding: 3px 10px; border-radius: 5px;
+}
+.risk-badge.critical { background: rgba(250,77,30,0.15); color: var(--orange); }
+.risk-badge.high { background: rgba(250,204,21,0.15); color: var(--yellow); }
+.risk-badge.moderate { background: rgba(250,204,21,0.1); color: var(--yellow); }
+.risk-badge.low { background: rgba(74,222,128,0.12); color: var(--green); }
+
+.mcp-drift-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+}
+.mcp-drift-cell {
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border-01);
+}
+.mcp-drift-cell-label {
+  font-size: 0.6rem; font-weight: 600; color: var(--text-dim);
+  letter-spacing: 1px; margin-bottom: 6px; display: block;
+}
+.mcp-drift-cell-value {
+  font-size: 0.85rem; font-weight: 600;
+}
+.mcp-drift-cell-value.safe { color: var(--green); }
+.mcp-drift-cell-value.danger { color: var(--orange); }
+
+.mcp-drift-desc-compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+}
+.mcp-drift-desc-box {
+  padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-01);
+}
+.mcp-drift-desc-box.baseline { background: rgba(74,222,128,0.03); border-color: rgba(74,222,128,0.15); }
+.mcp-drift-desc-box.current { background: rgba(250,77,30,0.03); border-color: rgba(250,77,30,0.15); }
+.mcp-drift-desc-box-label {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 1px;
+  margin-bottom: 6px; display: block;
+}
+.mcp-drift-desc-box.baseline .mcp-drift-desc-box-label { color: var(--green); }
+.mcp-drift-desc-box.current .mcp-drift-desc-box-label { color: var(--orange); }
+.mcp-drift-desc-box-text { font-size: 0.82rem; line-height: 1.5; }
+
+.mcp-drift-classification {
+  font-size: 0.78rem; color: var(--text-dim); line-height: 1.6;
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(250,77,30,0.03); border: 1px solid rgba(250,77,30,0.12);
+}
+
+.mcp-drift-safety-decision {
+  display: flex; align-items: center; gap: 10px; margin-top: 14px;
+  padding: 14px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+}
+.mcp-drift-safety-decision.blocked {
+  background: rgba(250,77,30,0.06); border: 1px solid rgba(250,77,30,0.2); color: var(--orange);
+}
+.mcp-drift-safety-decision.auto-apply {
+  background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2); color: var(--green);
+}
+.mcp-drift-safety-decision.review {
+  background: rgba(250,204,21,0.06); border: 1px solid rgba(250,204,21,0.2); color: var(--yellow);
+}
+
+.mcp-execution-result {
+  background: var(--surface-01); border: 1px solid var(--border-01);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 20px;
+}
+.mcp-execution-result.blocked { border-color: rgba(250,77,30,0.3); }
+.mcp-execution-result.allowed { border-color: rgba(74,222,128,0.3); }
+.mcp-execution-result h4 {
+  font-family: var(--heading); font-size: 0.95rem; font-weight: 700;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.mcp-execution-detail {
+  font-size: 0.78rem; color: var(--text-dim); line-height: 1.7;
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border-01);
+}
+
+@media (max-width: 768px) {
+  .mcp-drift-grid, .mcp-drift-desc-compare { grid-template-columns: 1fr; }
+}
+
 .drift-incident-container {
   margin-bottom: 24px;
 }
