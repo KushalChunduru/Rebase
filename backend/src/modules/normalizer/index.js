@@ -68,6 +68,17 @@ const extractors = {
       version: body.version || 'unknown',
       endpoint: 'events'
     };
+  },
+
+  sdk(raw) {
+    const body = raw.rawData;
+    return {
+      data: body,
+      schema: inferSchema(body),
+      service: body.packageName || raw.dependencyId,
+      version: body.latestVersion || 'unknown',
+      endpoint: `${body.registry}/${body.packageName}`
+    };
   }
 };
 

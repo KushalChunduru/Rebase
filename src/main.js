@@ -12,6 +12,8 @@ import { openApiDrawer, closeApiDrawer, handleDrawerPing } from './components/dr
 import { renderCatalog, openBrowseModal, closeBrowseModal, openAddApiModal, closeAddApiModal } from './components/catalog.js';
 import { connectWebSocket, onWebSocketMessage, isConnected } from './services/webhook-ws.js';
 import { renderDriftIncidentPanel } from './components/drift-incident.js';
+import { initSdkRegistry, handleSdkWebSocketMessage } from './components/sdk-registry.js';
+import { initChatbot } from './components/chatbot.js';
 
 // ============================================================
 // INITIALIZATION
@@ -25,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await connectBackend();
   initWebhookStream();
+  initSdkRegistry();
+  initChatbot();
 });
 
 async function connectBackend() {
@@ -64,6 +68,7 @@ function initWebhookStream() {
   onWebSocketMessage((data) => {
     updateLiveApiStatus(data);
     addWebhookFeedItem(data);
+    handleSdkWebSocketMessage(data);
 
     if (data.type === 'ws:connected') {
       showToast('WebSocket connected — listening for webhooks', 'success');

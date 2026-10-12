@@ -544,71 +544,51 @@
               <h2 class="view-page-title">SDK Registry</h2>
               <p class="view-page-sub">Track SDK versions, method signatures, and runtime behaviour across your dependency tree.</p>
             </div>
-            <span class="view-header-tag">4 PACKAGES TRACKED</span>
+            <div class="view-header-actions">
+              <span class="view-header-tag" id="sdk-count-tag">0 PACKAGES TRACKED</span>
+              <button class="btn-observe-all" id="btn-observe-all-sdks"><i data-lucide="scan"></i> Observe All</button>
+            </div>
           </div>
-          <div class="dep-cards-grid">
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-blue"><i data-lucide="terminal"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
-              </div>
-              <h3 class="dep-card-name">Python SDK</h3>
-              <p class="dep-card-desc">stripe-python client library</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">v8.4.0</span>
-                <span class="dep-meta-pill lang">Python</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Last verified: 2 min ago</span>
-                <span>14 methods tracked</span>
-              </div>
+
+          <!-- SDK observation feed -->
+          <div class="sdk-obs-bar" id="sdk-obs-bar">
+            <div class="sdk-obs-bar-empty" id="sdk-obs-empty">
+              <i data-lucide="package-search"></i>
+              <span>Click "Observe All" to fetch live version data from package registries.</span>
             </div>
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-emerald"><i data-lucide="code"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
-              </div>
-              <h3 class="dep-card-name">Node.js SDK</h3>
-              <p class="dep-card-desc">@afterform/node client</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">v4.1.2</span>
-                <span class="dep-meta-pill lang">TypeScript</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Last verified: 30 sec ago</span>
-                <span>22 methods tracked</span>
-              </div>
+          </div>
+
+          <div class="dep-cards-grid" id="sdk-cards-grid">
+            <!-- Rendered dynamically by JS -->
+          </div>
+
+          <!-- SDK detail panel (shows methods, version history) -->
+          <div class="sdk-detail-panel hidden" id="sdk-detail-panel">
+            <div class="sdk-detail-header">
+              <h3 class="sdk-detail-name" id="sdk-detail-name"></h3>
+              <button class="sdk-detail-close" id="sdk-detail-close"><i data-lucide="x"></i></button>
             </div>
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-cyan"><i data-lucide="box"></i></div>
-                <span class="dep-card-badge monitoring"><span class="status-pulse-dot"></span> Healthy</span>
+            <div class="sdk-detail-body">
+              <div class="sdk-detail-section">
+                <h4>Version Info</h4>
+                <div class="sdk-version-grid" id="sdk-version-grid"></div>
               </div>
-              <h3 class="dep-card-name">Go SDK</h3>
-              <p class="dep-card-desc">afterform-go module</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">v2.0.7</span>
-                <span class="dep-meta-pill lang">Go</span>
+              <div class="sdk-detail-section">
+                <h4>Tracked Methods (<span id="sdk-method-count">0</span>)</h4>
+                <div class="sdk-methods-list" id="sdk-methods-list"></div>
               </div>
-              <div class="dep-card-footer">
-                <span>Last verified: 1 min ago</span>
-                <span>9 methods tracked</span>
-              </div>
-            </div>
-            <div class="dep-card">
-              <div class="dep-card-top">
-                <div class="dep-card-icon bg-orange"><i data-lucide="cog"></i></div>
-                <span class="dep-card-badge review-required"><span class="status-pulse-dot"></span> Review</span>
-              </div>
-              <h3 class="dep-card-name">Rust SDK</h3>
-              <p class="dep-card-desc">afterform-rs crate</p>
-              <div class="dep-card-meta">
-                <span class="dep-meta-pill">v1.3.0</span>
-                <span class="dep-meta-pill lang">Rust</span>
-              </div>
-              <div class="dep-card-footer">
-                <span>Last verified: 5 min ago</span>
-                <span>6 methods tracked</span>
+              <div class="sdk-detail-section sdk-intel-section hidden" id="sdk-intel-section">
+                <div class="sdk-intel-header">
+                  <h4>Release Intelligence</h4>
+                  <button class="btn-analyze-releases" id="btn-analyze-releases"><i data-lucide="scan-search"></i> Analyze Releases</button>
+                </div>
+                <div class="sdk-intel-loading hidden" id="sdk-intel-loading">
+                  <div class="spinner-dot"></div>
+                  <span>Fetching release data &amp; scanning project usage...</span>
+                </div>
+                <div class="sdk-intel-summary hidden" id="sdk-intel-summary"></div>
+                <div class="sdk-intel-usage hidden" id="sdk-intel-usage"></div>
+                <div class="sdk-intel-findings hidden" id="sdk-intel-findings"></div>
               </div>
             </div>
           </div>
@@ -1225,6 +1205,28 @@ RAZORPAY_WEBHOOK_SECRET=your_webhook_secret</code></pre>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-container" id="toast-container"></div>
+
+    <!-- Chatbot -->
+    <button class="chat-fab" id="chat-fab" aria-label="Open AI Assistant">
+      <i data-lucide="bot"></i>
+    </button>
+    <div class="chat-panel" id="chat-panel">
+      <div class="chat-panel-header">
+        <div class="chat-header-left">
+          <i data-lucide="bot"></i>
+          <span>Rebase AI</span>
+        </div>
+        <button class="chat-close" id="chat-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-typing hidden" id="chat-typing">
+        <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Ask anything about Rebase..." autocomplete="off" />
+        <button class="chat-send" id="chat-send"><i data-lucide="send"></i></button>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

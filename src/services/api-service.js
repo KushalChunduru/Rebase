@@ -108,6 +108,27 @@ export const apiService = {
     return request(`${BACKEND_URL}/api/payments/orders/${orderId}`);
   },
 
+  async getSdks() {
+    const data = await request(`${BACKEND_URL}/api/sdks`);
+    return data.sdks;
+  },
+
+  async observeSdk(sdkId) {
+    return request(`${BACKEND_URL}/api/sdks/${sdkId}/observe`, { method: 'POST' });
+  },
+
+  async observeAllSdks() {
+    return request(`${BACKEND_URL}/api/sdks/observe-all`, { method: 'POST' });
+  },
+
+  async getSdkReleaseIntel(sdkId) {
+    return request(`${BACKEND_URL}/api/sdks/${sdkId}/release-intel`);
+  },
+
+  async getSdkUsage(sdkId) {
+    return request(`${BACKEND_URL}/api/sdks/${sdkId}/usage`);
+  },
+
   async getMcpTools() {
     return request(`${SIMULATOR_URL}/mcp/tools`);
   },

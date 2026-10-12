@@ -6,6 +6,8 @@ import { config } from './src/config.js';
 import routes from './src/routes/index.js';
 import webhooksRouter from './src/routes/webhooks.js';
 import paymentsRouter from './src/routes/payments.js';
+import sdksRouter from './src/routes/sdks.js';
+import chatRouter from './src/routes/chat.js';
 import { requestLogger } from './src/middleware/logger.js';
 import { errorHandler } from './src/middleware/error-handler.js';
 import { initWebSocket } from './src/ws.js';
@@ -32,6 +34,8 @@ app.use(requestLogger);
 
 app.use('/api', routes);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/sdks', sdksRouter);
+app.use('/api/chat', chatRouter);
 app.use('/webhooks', webhooksRouter);
 
 app.get('/health', (req, res) => {
