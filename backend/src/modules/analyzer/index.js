@@ -125,7 +125,7 @@ function checkWorkflowAffected(workflow, changedFields, changedValues, diffs) {
 
 function assessRisk(workflow, affected, diffs) {
   const hasDescriptionChange = affected.reasons.some(r => r.includes('description changed'));
-  if (hasDescriptionChange && workflow.critical) return 'CRITICAL';
+  if (hasDescriptionChange && workflow.critical) return 'HIGH';
 
   const hasFieldRemoval = diffs.some(d => d.type === 'field-removed' && d.layer === 'schema');
   if (hasFieldRemoval && workflow.critical) return 'HIGH';
